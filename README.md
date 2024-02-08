@@ -15,25 +15,36 @@ cd based
 
 ```
 pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
-python setup.py install
+pip install -e .
 
 # third party; to install flash-attention and the lm-eval harness. 
 causal-conv1d==1.1.1
 mamba-ssm==1.1.1
+
+cd evals/lm-eval-harness
+git submodule init
+git submodule update
 ```
 
 ### Train
 
 
+### Pretrained Checkpoints
+
+We are releasing the following checkpoints:
+- Based 360M parameters
+- [Based 1.3Bn parameters](https://huggingface.co/hazyresearch/based-1.3b)
+
 
 ### Evals
 
-The following instructions can be used to reproduce our results on the [LM-Eval harness](https://github.com/EleutherAI/lm-evaluation-harness)
+The following instructions can be used to reproduce our results on the [LM-Eval harness](https://github.com/EleutherAI/lm-evaluation-harness) using the pretrained checkpoints.
 
 ```
 cd evals/
-
+bash run_harness.sh
 ```
+
 
 
 
