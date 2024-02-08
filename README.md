@@ -14,14 +14,14 @@ cd based
 ```
 
 ```
-pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+pip install torch==2.1.2 torchvision==0.16.2 torchaudio==2.1.2 --index-url https://download.pytorch.org/whl/cu118 # due to observed causal-conv1d dependency
 pip install -e .
 
-# third party; to install flash-attention and the lm-eval harness. 
-causal-conv1d==1.1.1
-mamba-ssm==1.1.1
+# third party installs
+pip3 install causal-conv1d      # for mamba 
+pip3 install mamba-ssm==1.1.1
 
-cd evals/lm-eval-harness
+cd evals/lm-eval-harness  # for lm-eval harness
 git submodule init
 git submodule update
 ```
