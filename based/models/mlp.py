@@ -127,6 +127,7 @@ class GatedMlp(nn.Module):
             self.fc2 = nn.Linear(hidden_features, out_features, bias=bias2, **factory_kwargs)
         else:
             # print(f"Alternate gated mlp!")
+            # SA: This is the MLP type used in the NeoX Eleuther repo
             out_features = out_features if out_features is not None else in_features
             hidden_features = int(2 * in_features * ff_mult / 3)
             hidden_features = (hidden_features + multiple_of - 1) // multiple_of * multiple_of

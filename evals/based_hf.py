@@ -10,8 +10,7 @@ from based.models.gpt import GPTLMHeadModel
 class BasedLMWrapper(HFLM):
     def __init__(
             self, 
-            checkpoint_name: str, 
-            base_checkpoint_dir: str, 
+            checkpoint_name: str='hazyresearch/based-1.3b', 
             device: str = "cuda",
             **kwargs
         ) -> None:
@@ -21,9 +20,8 @@ class BasedLMWrapper(HFLM):
             assert kwargs["backend"] == "causal"
 
         self.checkpoint_name = checkpoint_name
-        self.base_checkpoint_dir = base_checkpoint_dir
 
-        model = GPTLMHeadModel.from_pretrained_hf(pretrained_model_name='hazyresearch/based-1.3b', device=device)
+        model = GPTLMHeadModel.from_pretrained_hf(pretrained_model_name=self.checkpoint_name, device=device)
 
         tokenizer_name = kwargs.get("tokenizer", "gpt2")
         tokenizer = AutoTokenizer.from_pretrained(tokenizer_name)

@@ -21,7 +21,7 @@ except ImportError:
 
 try:
     # fast transformers linear attention cuda kernel
-    from based.csrc import causal_dot_product  
+    from based.csrc.causal_dot_prod import causal_dot_product  
     print(f"Succesfully imported the causal dot product kernel... ")
 except:
     print(f"Could not impfort the causal dot product kernel... ")
