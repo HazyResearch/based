@@ -21,12 +21,17 @@ pip install -e .
 pip3 install causal-conv1d      # for mamba 
 pip3 install mamba-ssm==1.1.1
 
-cd evals/lm-eval-harness  # for lm-eval harness
+cd evals/lm-eval-harness        # for lm-eval harness
 git submodule init
 git submodule update
 ```
 
 ### Train
+
+To train a new model, construct a config.yaml file at ```based/configs/experiment/```. We are including the configs used to produce the pretrained checkpoints for the paper (released on HF below) at ```based/configs/experiment/reference/```.
+
+You can launch a training job using the following command from the ```based/based/``` directory, where you can modify the config name and number of GPUs (```trainer.devices```):
+```python run.py experiment=reference/based-1.3b trainer.devices=8```
 
 
 ### Pretrained Checkpoints
@@ -37,7 +42,7 @@ We are releasing the following checkpoints for research, trained at the 360M and
 - 1.3Bn parameters
     - [Based 1.3Bn](https://huggingface.co/hazyresearch/based-1.3b)
     - [Mamba 1.3Bn](https://huggingface.co/hazyresearch/mamba-1.3b)
-    - [Transformer++ 1.3Bn](https://huggingface.co/hazyresearch/transformer-pp-1.3b)
+    - [Transformer++ 1.3Bn](https://huggingface.co/hazyresearch/transformer-pp-1.3b). Transformer++ refers to the modern [Llama Architecture](https://github.com/facebookresearch/llama), which uses SwiGLU, Rotary, RMSNorm. 
 
 
 ### Downstream Evals

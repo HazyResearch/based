@@ -29,7 +29,8 @@ class BasedLMWrapper(HFLM):
             from based.models.mixer_model import MambaLMHeadModel
             model = MambaLMHeadModel.from_pretrained_hf(pretrained_model_name=self.checkpoint_name, device=device)
         elif model == "transformer":
-            from flash_attn import GPTLMHeadModel
+            # from flash_attn.models.gpt import GPTLMHeadModel; # TODO: construct a loading function
+            from based.models.gpt import GPTLMHeadModel
             model = GPTLMHeadModel.from_pretrained_hf(pretrained_model_name=self.checkpoint_name, device=device)
         else:
             raise ValueError(f"Unsupported model {model}")

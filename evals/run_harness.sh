@@ -19,3 +19,12 @@ python run_harness.py --model based_hf \
     --tasks $TASKS \
     --device $DEVICE \
     --batch_size $BATCH_SIZE
+
+# TRANSFORMER ++
+CHECKPOINT_NAME=hazyresearch/transformer-pp-1.3b
+MODEL=transformer
+python run_harness.py --model based_hf \
+    --model_args checkpoint_name=$CHECKPOINT_NAME,model=$MODEL \
+    --tasks $TASKS \
+    --device $DEVICE \
+    --batch_size $BATCH_SIZE
