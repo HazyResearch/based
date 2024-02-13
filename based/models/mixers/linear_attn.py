@@ -27,55 +27,6 @@ except:
     print(f"Could not impfort the causal dot product kernel... ")
     causal_dot_product = None
 
-class ShortConvolution(nn.Module):
-    """
-    Simple wrapper around nn.Conv1d that accepts dimension last. 
-    """
-
-    def __init__(
-        self, 
-        d_model: int,
-        kernel_size: int,
-        layer_idx: int=None,
-        **kwargs,
-    ): 
-        super().__init__()
-        self.d_model = d_model 
-        self.kernel_size = kernel_size
-        self.layer_idx = layer_idx
-        self.conv = nn.Conv1d(
-            in_channels=d_model,
-            out_channels=d_model,
-            kernel_size=kernel_size,
-            groups=d_model,
-            padding=kernel_size - 1,
-            bias=False
-        )
-    
-    def forward(
-        self, x: torch.Tensor, inference_params: InferenceParams=None, **kwargs
-    ):
-        """
-        Args:
-            x: (b, l, d) tensor
-        Returns: 
-            y: (b, l, d) tensor
-        """
-        if inference_params is not None:
-            state = self._get_state(inference_params.key_value_memory_dict)
-            if inference_params.seqlen_offset > 0:
-                # check if we are after the first step of inference, step if so
-                return self.step(x, state)
-            # otherwise, we are at the first step of inference, so we update the state
-            k = min(self.kernel_size, x.shape[1])
-            state[..., -k: ] = x[:, -k:].transpose(1, 2)
-        
-        l = x.size(1)
-        y = self.conv(x.transpose(1, 2))[..., :l].transpose(1, 2)
-
-        return y 
-
-
 def init_feature_map(feature_map: str='none', **kwargs: any):
     """
     Initialize query and key mapping for linear attention
@@ -85,15 +36,6 @@ def init_feature_map(feature_map: str='none', **kwargs: any):
     # Taylor series approximations to exp(x)
     elif feature_map == 'taylor_exp':
         return TaylorExp(**kwargs)
-    elif feature_map == 'taylor_exp_3':
-        return TaylorExp3(**kwargs) 
-    # Generalized quadratic polynomial
-    elif feature_map == 'polynomial_2':
-        return Polynomial2FeatureMap(**kwargs)
-    elif feature_map in "taylor_exp_no_1_q": 
-        return TaylorExpNo1Q(**kwargs)
-    elif feature_map == 'exp':
-        return Exp(**kwargs)
     elif feature_map == 'cosformer':
         return CosFormerFeatureMap(**kwargs)
     elif feature_map == 'performer':
@@ -125,20 +67,6 @@ class FeatureMap(nn.Module):
         Assume x.shape is (batch_size, n_heads, seq_len, head_dim)
         """
         return x
-
-
-class Exp(FeatureMap):
-    """
-    Spiky feature maps based on applying exp() element- or dimension-wise
-    """
-    def __init__(self, 
-                 fullspace: bool = True,
-                 **kwargs):
-        super().__init__(**kwargs)
-
-    def forward(self, x: torch.Tensor):
-        return torch.exp(x)
-
     
 class TaylorExp(FeatureMap):
     """
@@ -182,91 +110,6 @@ class TaylorExp(FeatureMap):
         x   = torch.cat([x[..., :1] ** 0,  
                          x / self.rrd, x2d, x2], dim=-1)
         return x 
-
-
-class TaylorExpNo1Q(FeatureMap):
-    """
-    Feature map to compute 2nd-order Taylor approx. of exp(q^T k / sqrt(d))
-    """
-    def __init__(
-            self, 
-            input_dim: int, 
-            scale_dim: Optional[int] = None, 
-            mem_save: bool = False,
-            **kwargs: any
-        ):
-        super().__init__(input_dim, **kwargs)
-        self.mem_save = mem_save
-        self.r2  = math.sqrt(2)
-        if scale_dim is None:
-            scale_dim = self.input_dim
-        self.rd  = math.sqrt(scale_dim)
-        self.rrd = math.sqrt(self.rd)
-        self.tril_indices = torch.tril_indices(self.input_dim, self.input_dim, -1)
-        
-    def forward(self, x: torch.Tensor):
-        # Get 2nd-order terms (rearrange(x * x), '... m n -> ... (m n)')
-        x2 = (x.unsqueeze(-1) * x.unsqueeze(-2)).flatten(start_dim=-2) / self.r2
-        return x2 / self.rd
-        
-
-class TaylorExp3(FeatureMap):
-    """
-    Feature map to compute 2nd-order Taylor approx. of exp(q^T k / sqrt(d))
-    """
-    def __init__(self, input_dim: int, **kwargs: any):
-        super().__init__(input_dim, **kwargs)
-        self.r3 = math.sqrt(8)
-        self.r2  = math.sqrt(2)
-        self.rd  = math.sqrt(self.input_dim)
-        self.rrd = math.sqrt(self.rd)
-        self.tril_indices = torch.tril_indices(self.input_dim, self.input_dim, -1)
-        
-    def forward(self, x: torch.Tensor):
-        # Get 2nd-order terms (rearrange(x * x), '... m n -> ... (m n)')
-        x2 = (x.unsqueeze(-1) * x.unsqueeze(-2)).flatten(start_dim=-2) / self.r2
-        # Get 3rd-order terms (rearrange(x * x * x), '... m n -> ... (m n)')
-        x3 = (x2.unsqueeze(-1) * x.unsqueeze(-2)).flatten(start_dim=-2) / self.r3
-        # SE: raising to power 0 is a hacky way to get ones without calling torch.ones
-        # which is incompatible with cuda graph caching 
-        return torch.cat([x[..., :1] ** 0, 
-                          x / self.rrd, x2 / self.rd, x3 / (self.rd * self.rd)], dim=self.head_dim_idx)
-        
-
-class Polynomial2FeatureMap(FeatureMap):
-    """
-    Generalization of Taylor exp. feature map with alternative polynomial coefficients
-    
-    To recover TaylorExp, we can set:
-    scale_dim = None, scale_norm = True, c0 = 1, c1 = 1, c2 = 0.5
-    Though may be better to deviate from results here: https://api.wandb.ai/links/hazy-research/tckn8ibj
-    e.g., scale_dim = 1, scale_norm = False, c0 = 0.5, c1 = 1, c2 = 0.5
-    """
-    def __init__(self, 
-                 input_dim: int, 
-                 scale_dim: Optional[int] = None,
-                 scale_norm: Optional[bool] = False,
-                 c0: float = 1, c1: float = 1, c2: float = 0.5,
-                 **kwargs: any):
-        super().__init__(input_dim=input_dim, **kwargs)
-        self.r2  = math.sqrt(2)
-        if scale_dim is None:
-            scale_dim = self.input_dim
-        self.scale_norm = scale_norm
-        self.rd  = math.sqrt(scale_dim)
-        self.rrd = math.sqrt(self.rd)
-        self.c0, self.c1, self.c2 = math.sqrt(c0), math.sqrt(c1), math.sqrt(c2)
-
-    def forward(self, x: torch.Tensor):
-        x = x / self.rrd
-        if self.scale_norm:
-            x = x / x.norm(dim=-1, keepdim=True).clamp(min=self.eps)
-        # 0th and 2nd order terms
-        x0 = self.c0 * torch.ones(x[..., :1].shape, dtype=x.dtype, device=x.device)
-        x2 = self.c2 * (x.unsqueeze(-2) * x.unsqueeze(-1)).flatten(start_dim=-2)
-        return torch.cat([x0, self.c1 * x, x2], dim=-1)
-
-
 
 class CosFormerFeatureMap(FeatureMap):
     """
@@ -486,11 +329,6 @@ class LinearAttention(nn.Module):
         linear_attn_init: bool = False,
         use_output_gating: bool = False,
         use_decay_proj: bool = False,
-        use_decay_proj_init_1: bool = False,
-        attn_fp32: bool = False,
-        use_exp_combo: bool = False,
-        use_positive: bool = False,
-        initial_conv: bool = False,
         scale_dim: Optional[int] = None,
         feature_expanded_dim: int = 256,
         **kwargs
@@ -511,8 +349,6 @@ class LinearAttention(nn.Module):
         self.l_max = l_max
         self.use_act = use_act
         self.mem_save = mem_save
-        if self.use_act:
-            self.act = nn.SiLU()
 
         # linear attention 
         self.feature_name = feature_name
@@ -525,7 +361,7 @@ class LinearAttention(nn.Module):
             self.head_dim = head_dim
         self.num_key_value_groups = self.num_heads // self.num_key_value_heads
 
-        if self.feature_name in ['taylor_exp', 'taylor_exp_3', 'exp']:
+        if self.feature_name in ['taylor_exp']:
             feature_map_kwargs = {
                 'input_dim': self.feature_dim,
                 'head_dim_idx': -1,
@@ -537,17 +373,6 @@ class LinearAttention(nn.Module):
                 "halfspace": False,
                 "scale_fullspace": False,
             }
-        elif self.feature_name == 'polynomial_2':
-            feature_map_kwargs = {
-                'input_dim': self.feature_dim,
-                'head_dim_idx': -1,
-                'eps': 1e-12,
-                'scale_dim': scale_dim,
-                'scale_norm': False,
-                'c0': c0,
-                'c1': c1,
-                'c2': c2,
-            }
         elif self.feature_name == "expanded_performer":
             feature_map_kwargs = {
                 'input_dim': self.feature_dim,
@@ -558,12 +383,6 @@ class LinearAttention(nn.Module):
                 'input_dim': self.feature_dim,
             }
 
-        self.initial_conv = initial_conv
-        if self.initial_conv:
-            # additions
-            self.input_proj = nn.Linear(self.d_model, self.d_model, bias=False)
-            self.conv = ShortConvolution(d_model, kernel_size=4, layer_idx=(layer_idx, "conv1"))
-
         self.feature_map = init_feature_map(feature_map=self.feature_name, **feature_map_kwargs)
         self.proj_q = nn.Linear(self.d_model, self.feature_dim * self.num_heads, bias=False)
         self.proj_k = nn.Linear(self.d_model, self.feature_dim * self.num_heads, bias=False)
@@ -571,30 +390,12 @@ class LinearAttention(nn.Module):
         self.out_proj = nn.Linear(self.num_heads * self.head_dim, self.d_model, bias=False)
 
         self.use_decay_proj = use_decay_proj
-        self.use_decay_proj_init_1 = use_decay_proj_init_1
-        self.attn_fp32 = attn_fp32
-        self.use_exp_combo = use_exp_combo
-        self.use_positive = use_positive
         if self.use_decay_proj:
             # we have an n x n matrix of decay values - lets make it input-dependent
             self.decay_proj = nn.Linear(self.d_model, self.num_heads, bias=False)
-            if self.use_decay_proj_init_1:
-                nn.init.constant_(self.decay_proj.weight, 1)
-        
-        self.use_output_gating = use_output_gating
-        if self.use_output_gating:
-            # we have an n x n matrix of decay values - lets make it input-dependent
-            self.output_gate_projection = nn.Linear(self.d_model, self.num_heads, bias=False)
-
-        self.use_proj_g = use_proj_g
-        if self.use_proj_g:
-            self.proj_g = nn.Linear(self.d_model, self.d_model, bias=False) 
 
         self.dropout = nn.Identity()
         self.eps = eps
-
-        if linear_attn_init:
-            self.init_proj()
 
         # parameters
         self.use_rotary_apply = use_rotary_apply
@@ -612,25 +413,6 @@ class LinearAttention(nn.Module):
                 max_position_embeddings=self.l_max,
                 base=self.rope_theta,
             )
-
-
-    def init_proj(self):
-        print("init")
-        import time
-        time.sleep(1)
-        nn.init.xavier_normal_(self.proj_q.weight)
-        if self.proj_q.bias is not None:
-            nn.init.constant_(self.proj_q.bias, 0)
-        nn.init.xavier_normal_(self.proj_k.weight)
-        if self.proj_k.bias is not None:
-            nn.init.constant_(self.proj_k.bias, 0)
-        nn.init.xavier_normal_(self.proj_v.weight)
-        if self.proj_v.bias is not None:
-            nn.init.constant_(self.proj_v.bias, 0)
-        nn.init.xavier_normal_(self.out_proj.weight)
-        if self.out_proj.bias is not None:
-            nn.init.constant_(self.out_proj.bias, 0)
-
 
     def process_qkv(self, 
                     hidden_states: torch.Tensor,
@@ -665,8 +447,6 @@ class LinearAttention(nn.Module):
             cos, sin = self.rotary_emb(v, seq_len=self.l_max)
             q, k = apply_rotary_pos_emb(q, k, cos, sin, position_ids)
 
-        # float(), seqlen larger, dims choices.
-
         k = repeat_kv(k, self.num_key_value_groups)
         v = repeat_kv(v, self.num_key_value_groups)
         return q, k, v, kv_seq_len
@@ -694,11 +474,6 @@ class LinearAttention(nn.Module):
                 hidden_states, position_ids, use_cache
             )
         else:
-
-            if self.initial_conv:
-                u = self.conv(hidden_states)
-                u = nn.functional.silu(u)
-                hidden_states = u * self.input_proj(hidden_states)
             b, l, _ = hidden_states.size()
             q, k, v = self.proj_q(hidden_states), self.proj_k(hidden_states), self.proj_v(hidden_states)
             q = q.view(b, l, self.num_heads, self.feature_dim).transpose(1, 2)
@@ -715,7 +490,7 @@ class LinearAttention(nn.Module):
             return self.step(hidden_states, kv_state, k_state, q, k, v, decay=decay_recurrent)
         
         if self.train_view == "linear" and inference_params is None:
-            # TODO(SE): no support for recurrent view with the kernel
+            # Note: No support for recurrent view with the kernel
             if decay is not None:
                 raise NotImplementedError("Decay not implemented for linear train view")
 
@@ -753,23 +528,7 @@ class LinearAttention(nn.Module):
 
             cumsum_matrix = torch.tril(torch.ones((l, l))).to(q.device, q.dtype)
 
-            if self.attn_fp32:
-                A_qk = torch.einsum("bhnd,bhmd->bhnm", q.to(torch.float32), k.to(torch.float32)).to(torch.float32)
-                if self.use_decay_proj:
-                    dt_out = self.decay_proj(hidden_states) # (b, l, h)
-                    if self.use_exp_combo:
-                        decay = torch.exp(dt_out.transpose(1,2).unsqueeze(-1) * decay.unsqueeze(0))    # (b, h, l, 1) * (1, h, l, l) -> (b, h, l, l)
-                    else:
-                        decay = dt_out.transpose(1,2).unsqueeze(-1) * decay.unsqueeze(0)    # (b, h, l, 1) * (1, h, l, l) -> (b, h, l, l)
-
-                if decay is not None:
-                    if len(decay.shape) == 3:
-                        decay = decay.unsqueeze(0)
-                    A_qk = A_qk.to(torch.float32) * decay.to(torch.float32)
-                else:
-                    A_qk = A_qk * cumsum_matrix
-                out = torch.einsum("bhnm,bhme->bhne", A_qk.to(torch.float32), v.to(torch.float32)).to(torch.float32)
-            else:
+            if 1:
                 A_qk = torch.einsum("bhnd,bhmd->bhnm", q, k) 
                 
                 if decay is not None:
@@ -787,13 +546,6 @@ class LinearAttention(nn.Module):
                     A_qk = A_qk * cumsum_matrix
                 
                 out = torch.einsum("bhnm,bhme->bhne", A_qk.to(hidden_states.dtype), v.to(hidden_states.dtype))
-
-                if self.use_output_gating:
-                    # SE: this output gating has the same affect as the decay_proj, but can 
-                    # be used without the decay matrix. It projects the hidden states to one
-                    # scalar per head. That head is then gated with the scalar. 
-                    g = self.output_gate_projection(hidden_states) # (b, l, h)
-                    out = torch.einsum("bhld,blh->bhld", out, g)
 
             # denom
             z = 1 / (torch.einsum("bhld,bhld->bhl", q, k.cumsum(2)) + self.eps)
@@ -818,14 +570,7 @@ class LinearAttention(nn.Module):
             raise NotImplementedError(f"Train view {self.train_view} not implemented")
           
         y = rearrange(y, 'b h l d -> b l (h d)')
-        if self.use_proj_g:
-            y = y * nn.functional.silu(self.proj_g(hidden_states))
-        
-        if self.use_act:
-            y = self.act(self.out_proj(y.to(hidden_states.dtype)))
-        else:
-            y = self.out_proj(y.to(hidden_states.dtype))
-
+        y = self.out_proj(y.to(hidden_states.dtype))
         y = self.dropout(y)
         return y.to(hidden_states.dtype)
 
