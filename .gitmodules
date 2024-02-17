@@ -1,3 +1,6 @@
 [submodule "evals/lm-evaluation-harness"]
 	path = evals/lm-evaluation-harness
 	url = https://github.com/EleutherAI/lm-evaluation-harness.git
+[submodule "zoology"]
+	path = zoology
+	url = https://github.com/HazyResearch/zoology.git
