@@ -1,5 +1,19 @@
 # Based: Simple linear attention language models balance the recall-throughput tradeoff
 
+
+<div align="center" >
+    <!-- <img src="assets/banner.png" height=150 alt="" style="margin-bottom:px"/>  -->
+    BASED
+
+[![GitHub](https://img.shields.io/github/license/HazyResearch/meerkat)](https://img.shields.io/github/license/HazyResearch/meerkat)
+[![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/pre-commit/pre-commit)
+
+**Simple linear attention language models balance the recall-throughput tradeoff.**
+
+
+</div>
+
+
 Based is an efficient architecture that approximates attention with linear attention to model long-range dependencies in the sequence plus short (i.e. dimension 64) sliding window attention to model fine-grained local dependencies in the sequence. In this repo, we are including code to train new models and to eval existing checkpoints on downstream tasks.
 
 ### Installations
