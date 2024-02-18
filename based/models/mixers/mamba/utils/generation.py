@@ -137,7 +137,6 @@ def decode(
         sequences: (batch, max_length)
         scores: tuples of (batch, vocab_size)
     """
-    breakpoint()
     if streamer is not None:
         streamer.put(input_ids.cpu())
 
@@ -191,7 +190,6 @@ def decode(
         return token.unsqueeze(1)
 
     def should_stop(current_token, inference_params):
-        breakpoint()
         if inference_params.seqlen_offset == 0:
             return False
         if eos_token_id is not None and (current_token == eos_token_id).all():
