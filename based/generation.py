@@ -104,6 +104,7 @@ def decode(
     tensor_parallel=1,
     cg=False,
     enable_timing=False,
+    stopping_criteria: any = None,
     **kwargs,
 ):
     """Decoding, either greedy or with top-k or top-p sampling.
@@ -172,6 +173,7 @@ def decode(
         return token.unsqueeze(1)
 
     def should_stop(current_token, inference_params):
+        breakpoint()
         if inference_params.seqlen_offset == 0:
             return False
         if eos_token_id is not None and (current_token == eos_token_id).all():

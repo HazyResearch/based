@@ -117,7 +117,10 @@ def decode(
     vocab_size=None,
     cg=False,
     enable_timing=False,
-    streamer: Optional[TextStreamer] = None
+    streamer: Optional[TextStreamer] = None,
+    stopping_criteria: any = None,
+    pad_token_id=None,
+    **kwargs
 ):
     """Decoding, either greedy or with top-k or top-p sampling.
     If top-k = 0, don't limit the number of candidates (pure sampling).
@@ -134,6 +137,7 @@ def decode(
         sequences: (batch, max_length)
         scores: tuples of (batch, vocab_size)
     """
+    breakpoint()
     if streamer is not None:
         streamer.put(input_ids.cpu())
 
@@ -187,6 +191,7 @@ def decode(
         return token.unsqueeze(1)
 
     def should_stop(current_token, inference_params):
+        breakpoint()
         if inference_params.seqlen_offset == 0:
             return False
         if eos_token_id is not None and (current_token == eos_token_id).all():
