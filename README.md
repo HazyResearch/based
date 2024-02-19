@@ -17,7 +17,7 @@ Based is an efficient architecture that approximates attention with linear atten
 
 **Note.** The code in this repository is tested on `python=3.8.18` and `torch=2.1.2`. We recommend using these versions in a clean environment. 
 
-```
+```bash
 # clone the repository
 git clone git@github.com:HazyResearch/based.git
 cd based
