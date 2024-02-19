@@ -53,15 +53,16 @@ You can launch a training job using the following command from the ```based/base
 
 ## Evaluate
 
+Under `evaluate`, we have a clone of EleutherAI's [lm-evaluation-harness](https://github.com/EleutherAI/lm-evaluation-harness). We have added a suite of three new *recall-intensive tasks* as well as some utilities for running the evaluations from the Based paper. 
+
 ### Setup.
 TODO: Update this. 
-```
-# activate 
-cd evals/lm-eval-harness        # for lm-eval harness
+```bash
+cd evaluate 
+
+# init the submodule and install
 git submodule init
 git submodule update
-
-# this 
 pip install -e . 
 ```
 
@@ -72,6 +73,10 @@ cd evals/
 bash run_harness.sh
 ```
 
+
+## Experiments on Synthetic Data
+TODO: Update this. 
+```
 
 
 

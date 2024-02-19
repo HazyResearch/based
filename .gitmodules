@@ -4,3 +4,6 @@
 [submodule "synthetic"]
 	path = synthetic
 	url = https://github.com/HazyResearch/zoology.git
+[submodule "evaluate"]
+	path = evaluate
+	url = https://github.com/HazyResearch/based-evaluation-harness
