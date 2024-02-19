@@ -28,26 +28,27 @@ trainer:
 
 datamodule:
   _target_: train.datamodules.language_modeling_neox.NeoxLMDataModule   
-  batch_size: 8  # per gpu
-  batch_size_eval: 32
+  batch_size: 4  # per gpu
+  batch_size_eval: 4
   num_predict_batches_eval: 100
   global_batch_size: ${..train.global_batch_size}
   max_steps: ${..trainer.max_steps}
   num_test_samples: 1000
   num_valid_samples: 1000
 
-expt_name: 02-18-based-clean-public
+expt_name: 02-19-based-1b
 name: ${.expt_name}
 
 callbacks:
   model_checkpoint:
-    dirpath: /var/cr01_data/sabri_data/checkpoints/${expt_name}
+    dirpath: /var/cr05_data/sabri_data/checkpoints/${expt_name}
+
 
 resume: True
 do_test: True
 
 model:
-  _target_: based.models.gpt.GPTLMHeadModel
+  _target_:  based.models.gpt.GPTLMHeadModel
   _recursive_: false
   config:
     alt_mixer_layers: 
@@ -56,6 +57,8 @@ model:
       - 11
       - 16
       - 21
+      - 27
+      - 33
 
     alt_mixer_2_layers:
       - 2
@@ -63,6 +66,8 @@ model:
       - 12
       - 17
       - 22
+      - 28
+      - 34
 
     mixer:
       _target_: based.models.mixers.base_conv.BaseConv
@@ -70,6 +75,7 @@ model:
       use_bias: True
       expand_proj: 4
       kernel_sizes: 3
+
 
     alt_mixer: 
       _target_: based.models.mixers.linear_attention.LinearAttention  
@@ -80,6 +86,7 @@ model:
       feature_dim: 16
       num_heads: 16
 
+
     alt_mixer_2:
       _target_: based.models.mixers.sliding_attention.SlidingAttention  
       window_size: 128
@@ -87,11 +94,13 @@ model:
       causal: true
       do_update: true
 
-    n_embd: 1024
-
+    n_embd: 1792
+    fixed_decay: True      # flag 
+    decay_const: -3
+    decay_denom: False
     special_initializer: true
     n_head: 16
-    n_layer: 27
+    n_layer: 36
     _target_: based.models.gpt.GPT2MixerConfig
     rms_norm: true
     fused_mlp: false
@@ -115,4 +124,3 @@ model:
     scale_attn_by_inverse_layer_idx: false
 
     n_inner: ${eval:2 * ${.n_embd}}
-
