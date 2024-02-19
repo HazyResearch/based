@@ -1,5 +1,7 @@
 from transformers import AutoTokenizer
 
+from based.utils.hf import load_config_hf
+
 from lm_eval.api.registry import register_model
 from lm_eval.models.huggingface import HFLM
 
@@ -29,9 +31,11 @@ class BasedLMWrapper(HFLM):
             from based.models.mixer_model import MambaLMHeadModel
             model = MambaLMHeadModel.from_pretrained_hf(pretrained_model_name=self.checkpoint_name, device=device)
         elif model == "transformer":
-            # from flash_attn.models.gpt import GPTLMHeadModel; # TODO: construct a loading function
-            from based.models.gpt import GPTLMHeadModel
-            model = GPTLMHeadModel.from_pretrained_hf(pretrained_model_name=self.checkpoint_name, device=device)
+            from flash_attn.models.gpt import GPTLMHeadModel, GPT2Config; # TODO: construct a loading function
+            # from based.models.gpt import GPTLMHeadModel
+            config_data = load_config_hf(self.checkpoint_name)
+            config = GPT2Config(**config_data)
+            model = GPTLMHeadModel.from_pretrained(self.checkpoint_name, config=config, device=device)
         else:
             raise ValueError(f"Unsupported model {model}")
 

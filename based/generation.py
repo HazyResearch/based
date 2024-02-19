@@ -173,7 +173,6 @@ def decode(
         return token.unsqueeze(1)
 
     def should_stop(current_token, inference_params):
-        breakpoint()
         if inference_params.seqlen_offset == 0:
             return False
         if eos_token_id is not None and (current_token == eos_token_id).all():

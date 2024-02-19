@@ -1,5 +1,14 @@
 from setuptools import setup
 
+
+
+# ensure that torch is installed, and send to torch website if not
+try:
+    import torch
+except ModuleNotFoundError:
+    raise ValueError("Please install torch first: https://pytorch.org/get-started/locally/")
+
+
 setup(
     name='based',
     version="0.0.1",
@@ -37,5 +46,6 @@ setup(
         "lm-eval==0.4.1",
         "ninja==1.11.1.1",
         "flash-attn==2.5.2",
+        "causal-conv1d"
     ],
 )
