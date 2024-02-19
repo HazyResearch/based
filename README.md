@@ -15,7 +15,7 @@ Based is an efficient architecture that approximates attention with linear atten
 
 ## Installation
 
-Note: The code in this repository is tested on `python=3.8.18` and `torch=2.1.2`. We recommend using these versions in a clean environment. 
+**Note.** The code in this repository is tested on `python=3.8.18` and `torch=2.1.2`. We recommend using these versions in a clean environment. 
 
 ```
 # clone the repository
@@ -30,6 +30,8 @@ pip install -e .
 ```
 
 ## Pretrained Checkpoints
+
+
 
 We are releasing the following checkpoints for research, trained at the 360M and 1.3Bn parameter scales. Each checkpoint is trained on the same 10Bn tokens of the Pile corpus, using the same data order. The checkpoints are trained using the same code and infrastructure.  
 - 360M parameters
@@ -51,11 +53,16 @@ You can launch a training job using the following command from the ```based/base
 
 ## Evaluate
 
-
+### Setup.
+TODO: Update this. 
 ```
+# activate 
 cd evals/lm-eval-harness        # for lm-eval harness
 git submodule init
 git submodule update
+
+# this 
+pip install -e . 
 ```
 
 The following instructions can be used to reproduce our results on the [LM-Eval harness](https://github.com/EleutherAI/lm-evaluation-harness) using the pretrained checkpoints.
