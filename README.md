@@ -31,8 +31,6 @@ pip install -e .
 
 ## Pretrained Checkpoints
 
-
-
 We are releasing the following checkpoints for research, trained at the 360M and 1.3Bn parameter scales. Each checkpoint is trained on the same 10Bn tokens of the Pile corpus, using the same data order. The checkpoints are trained using the same code and infrastructure.  
 - 360M parameters
     - [Based 360M]
@@ -41,6 +39,14 @@ We are releasing the following checkpoints for research, trained at the 360M and
     - [Mamba 1.3Bn](https://huggingface.co/hazyresearch/mamba-1.3b)
     - [Transformer++ 1.3Bn](https://huggingface.co/hazyresearch/transformer-pp-1.3b). Transformer++ refers to the modern [Llama Architecture](https://github.com/facebookresearch/llama), which uses SwiGLU, Rotary, RMSNorm. 
 
+
+To use the Transformer and Mamba checkpoints, you will need the following installations:
+```bash
+# transformer
+pip install flash_attn
+
+# mamba
+```
 
 
 ## Train

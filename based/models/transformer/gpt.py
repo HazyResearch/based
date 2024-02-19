@@ -38,7 +38,7 @@ from flash_attn.utils.distributed import (
     get_dim_for_local_rank,
     sync_shared_params,
 )
-from flash_attn.utils.generation import GenerationMixin
+from based.generation import GenerationMixin
 from flash_attn.utils.pretrained import state_dict_from_pretrained
 
 try:
