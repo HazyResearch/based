@@ -27,19 +27,19 @@ learning_rate_monitor:
   logging_interval: step
 
 speed_monitor:
-  _target_: src.callbacks.speed_monitor.SpeedMonitor
+  _target_: train.callbacks.speed_monitor.SpeedMonitor
   intra_step_time: True
   inter_step_time: True
   epoch_time: True
 
 loss_scale_monitor:
-  _target_: src.callbacks.loss_scale_monitor.LossScaleMonitor
+  _target_: train.callbacks.loss_scale_monitor.LossScaleMonitor
 
 params_log:
-  _target_: src.callbacks.params_log.ParamsLog
+  _target_: train.callbacks.params_log.ParamsLog
   total_params_log: True
   trainable_params_log: True
   non_trainable_params_log: True
 
 gpu_affinity:
-  _target_: src.callbacks.gpu_affinity.GpuAffinity
+  _target_: train.callbacks.gpu_affinity.GpuAffinity

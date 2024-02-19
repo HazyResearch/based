@@ -13,7 +13,7 @@ defaults:
 # this allows you to overwrite only specified parameters
 
 task:
-  _target_: src.tasks.seq.SequenceLMModel
+  _target_: train.tasks.seq.SequenceLMModel
 
 seed: 1111
 
@@ -71,7 +71,7 @@ callbacks:
     filename: step_{step}
     auto_insert_metric_name: False
   model_checkpoint_progress:
-    _target_: src.callbacks.model_checkpoint.ModelCheckpointMine
+    _target_: train.callbacks.model_checkpoint.ModelCheckpointMine
     # fault_tolerant: True  # The .pl_auto_save.ckpt doesn't get saved by all workers
     every_n_train_steps: 50000
     save_last: False

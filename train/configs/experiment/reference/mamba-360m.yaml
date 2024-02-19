@@ -13,7 +13,7 @@ train:
   
   scheduler: 
     lr_min: 0.00008
-    _target_: src.optim.timm_lr_scheduler.TimmCosineLRScheduler
+    _target_: train.optim.timm_lr_scheduler.TimmCosineLRScheduler
     warmup_t: 200
     t_initial: 19800
     t_in_epochs: false
@@ -28,7 +28,7 @@ trainer:
 
 
 datamodule:
-  _target_: src.datamodules.language_modeling_neox.NeoxLMDataModule   
+  _target_: train.datamodules.language_modeling_neox.NeoxLMDataModule   
   batch_size: 8  # per gpu
   batch_size_eval: 32
   num_predict_batches_eval: 100

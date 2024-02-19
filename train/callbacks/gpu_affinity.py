@@ -20,7 +20,7 @@ def l2_promote():
 
 def set_affinity(trainer):
     try:
-        from src.utils.gpu_affinity import set_affinity
+        from train.utils.gpu_affinity import set_affinity
         nproc_per_node = torch.cuda.device_count()
         affinity = set_affinity(trainer.local_rank, nproc_per_node, 'socket_unique_continuous')
         log.info(f'{trainer.local_rank}: thread affinity: {affinity}')

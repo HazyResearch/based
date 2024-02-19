@@ -1,5 +1,5 @@
 flop_count:
-  _target_: src.callbacks.flop_count.FlopCount
+  _target_: train.callbacks.flop_count.FlopCount
   profilers: ['fvcore']
   input_size: [3, 224, 224]
   device: null

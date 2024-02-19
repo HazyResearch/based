@@ -1,4 +1,4 @@
-_target_: src.datamodules.continual_lm.LMDataModule
+_target_: train.datamodules.continual_lm.LMDataModule
 dataset_name: wikitext
 # EleutherAI/pile
 dataset_config_name: wikitext-103-v1

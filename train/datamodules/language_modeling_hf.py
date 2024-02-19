@@ -17,11 +17,11 @@ from datasets import load_dataset
 
 from pytorch_lightning import LightningDataModule
 
-from based.datamodules.datasets.lm_dataset import LMDataset
-from based.datamodules.fault_tolerant_sampler import RandomFaultTolerantSampler
-from based.datamodules.fault_tolerant_sampler import FaultTolerantDistributedSampler
-from based.datamodules.datasets.detokenizer import DATASET_TOKENIZATION_REGISTRY
-from based.utils.utils import get_logger
+from train.datamodules.datasets.lm_dataset import LMDataset
+from train.datamodules.fault_tolerant_sampler import RandomFaultTolerantSampler
+from train.datamodules.fault_tolerant_sampler import FaultTolerantDistributedSampler
+from train.datamodules.datasets.detokenizer import DATASET_TOKENIZATION_REGISTRY
+from train.utils.utils import get_logger
 logger = get_logger()
 
 

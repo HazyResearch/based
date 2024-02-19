@@ -11,10 +11,10 @@ from einops import rearrange
 
 from omegaconf import OmegaConf
 
-from src.utils.utils import get_logger
-from src.optim.param_grouping import group_parameters_for_optimizer
-from src.utils.checkpoint import load_checkpoint
-from src.tasks.seq import SequenceLMModel
+from train.utils.utils import get_logger
+from train.optim.param_grouping import group_parameters_for_optimizer
+from train.utils.checkpoint import load_checkpoint
+from train.tasks.seq import SequenceLMModel
 # if importlib.util.find_spec('deepspeed'):
 #     import deepspeed
 #     from deepspeed.ops.adam import DeepSpeedCPUAdam, FusedAdam

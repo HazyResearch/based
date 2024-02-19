@@ -9,7 +9,7 @@ try:
 except ImportError:
     FastLayerNorm = None
 
-from src.models.modules.seq_common import PositionalEncoding
+from based.models.modules.seq_common import PositionalEncoding
 
 
 def group_parameters_for_optimizer(model, optimizer_cfg, bias_weight_decay=False,

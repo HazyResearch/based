@@ -10,9 +10,9 @@ from einops import rearrange
 
 from omegaconf import OmegaConf
 
-from src.utils.utils import get_logger
-from src.optim.param_grouping import group_parameters_for_optimizer
-from src.utils.checkpoint import load_checkpoint
+from train.utils.utils import get_logger
+from train.optim.param_grouping import group_parameters_for_optimizer
+from train.utils.checkpoint import load_checkpoint
 
 logger = get_logger(__name__)
 

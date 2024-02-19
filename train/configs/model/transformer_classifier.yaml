@@ -2,7 +2,7 @@
 #   - base
 #   - override layer: transformer
 
-_target_: src.models.transformer.TransformerClassifier
+_target_: based.models.transformer.TransformerClassifier
 d_model: ???
 activation: gelu
 norm_first: True

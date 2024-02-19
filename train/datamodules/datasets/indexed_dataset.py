@@ -22,7 +22,7 @@ from itertools import accumulate
 import numpy as np
 import torch
 
-from src.utils.utils import print_rank_zero
+from train.utils.utils import print_rank_zero
 
 
 def __best_fitting_dtype(vocab_size=None):

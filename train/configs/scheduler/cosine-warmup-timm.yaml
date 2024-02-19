@@ -1,2 +1,2 @@
 # @package train.scheduler
-_target_: src.optim.timm_lr_scheduler.TimmCosineLRScheduler
+_target_: train.optim.timm_lr_scheduler.TimmCosineLRScheduler

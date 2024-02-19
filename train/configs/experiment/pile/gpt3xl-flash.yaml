@@ -21,7 +21,7 @@ train:
 
 trainer:
   strategy:
-    _target_: src.utils.ddp_zero1.DDPStrategyZero1
+    _target_: train.utils.ddp_zero1.DDPStrategyZero1
     find_unused_parameters: False
     gradient_as_bucket_view: True
   max_steps: 400000

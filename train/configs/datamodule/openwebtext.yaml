@@ -1,4 +1,4 @@
-_target_: src.datamodules.language_modeling_hf.LMDataModule
+_target_: train.datamodules.language_modeling_hf.LMDataModule
 dataset_name: openwebtext
 dataset_config_name: null
 tokenizer_name: gpt2

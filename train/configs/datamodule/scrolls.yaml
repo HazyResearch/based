@@ -1,4 +1,4 @@
-_target_: src.datamodules.scrolls.ScrollsDataModule
+_target_: train.datamodules.scrolls.ScrollsDataModule
 dataset_name: tau/scrolls
 dataset_config_name: gov_report
 cache_dir: ${oc.env:DATA_DIR,${data_dir}}/scrolls/cache

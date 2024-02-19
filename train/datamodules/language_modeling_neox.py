@@ -23,12 +23,12 @@ from datasets import load_dataset
 
 from pytorch_lightning import LightningDataModule
 
-from src.datamodules.datasets.lm_dataset import LMDataset
-from src.datamodules.datasets.indexed_dataset import MMapIndexedDataset
-from src.datamodules.fault_tolerant_sampler import RandomFaultTolerantSampler
-from src.datamodules.fault_tolerant_sampler import FaultTolerantDistributedSampler
-from src.datamodules.datasets.detokenizer import DATASET_TOKENIZATION_REGISTRY
-from src.utils.utils import get_logger, print_rank_zero
+from train.datamodules.datasets.lm_dataset import LMDataset
+from train.datamodules.datasets.indexed_dataset import MMapIndexedDataset
+from train.datamodules.fault_tolerant_sampler import RandomFaultTolerantSampler
+from train.datamodules.fault_tolerant_sampler import FaultTolerantDistributedSampler
+from train.datamodules.datasets.detokenizer import DATASET_TOKENIZATION_REGISTRY
+from train.utils.utils import get_logger, print_rank_zero
 
 logger = get_logger()
 
@@ -368,7 +368,7 @@ def _build_index_mappings(
         # sample-idx.
         start_time = time.time()
         # Use C++ implementation for speed.
-        from src.datamodules.neox_utils import helpers
+        from train.datamodules.neox_utils import helpers
 
         assert doc_idx.dtype == np.int32
         assert sizes.dtype == np.int32

@@ -10,7 +10,7 @@ from pytorch_lightning.utilities import rank_zero_only
 from pytorch_lightning.utilities.parsing import AttributeDict
 from pytorch_lightning.utilities.types import STEP_OUTPUT
 
-from src.utils.ema import ExponentialMovingAverage
+from train.utils.ema import ExponentialMovingAverage
 
 
 class EMACallback(Callback):

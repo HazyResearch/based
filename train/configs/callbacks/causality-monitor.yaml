@@ -1,2 +1,2 @@
 causality-monitor:
-  _target_: src.callbacks.causality_monitor.CausalityMonitor
+  _target_: train.callbacks.causality_monitor.CausalityMonitor

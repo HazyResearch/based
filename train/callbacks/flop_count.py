@@ -7,8 +7,8 @@ from pytorch_lightning import Callback, Trainer, LightningModule
 from pytorch_lightning.utilities import rank_zero_only
 from pytorch_lightning.utilities.parsing import AttributeDict
 
-from src.utils.flops import has_deepspeed_profiling, has_fvcore_profiling
-from src.utils.flops import profile_deepspeed, profile_fvcore
+from train.utils.flops import has_deepspeed_profiling, has_fvcore_profiling
+from train.utils.flops import profile_deepspeed, profile_fvcore
 
 
 class FlopCount(Callback):

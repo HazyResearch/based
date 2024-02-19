@@ -49,12 +49,12 @@ try:
 except ImportError:
     dropout_add_layer_norm_parallel_residual = None
 
-# try:
-#     from flash_attn.ops.rms_norm import RMSNorm, dropout_add_rms_norm
-# except ImportError:
-#     RMSNorm, dropout_add_rms_norm = None, None
+try:
+    from flash_attn.ops.rms_norm import RMSNorm, dropout_add_rms_norm
+except ImportError:
+    RMSNorm, dropout_add_rms_norm = None, None
     
-from based.ops.triton.layer_norm import RMSNorm
+# from based.ops.triton.layer_norm import RMSNorm
 
 try:
     from flash_attn.ops.rms_norm import dropout_add_rms_norm_parallel_residual

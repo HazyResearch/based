@@ -1,4 +1,4 @@
 ema:
-  _target_: src.callbacks.ema.EMACallback
+  _target_: train.callbacks.ema.EMACallback
   decay: ???
   use_num_updates: False
