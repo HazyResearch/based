@@ -21,7 +21,7 @@ def pytorch_step(kv_state, kv_state_t, k_state, q, k, v, denom: bool=True, eps: 
     """
 
     # prepare inputs
-    kv_state_ref = kv_state.detach().clone()
+    kv_state_ref = kv_state.detach().clone() # So that the kernel can write to different memory
     k_state_ref  = k_state.detach().clone()
     
     # compute
@@ -113,9 +113,6 @@ def based_step_correct(dt, device='cuda'):
     k = torch.randn(batch_size*heads, d_state, device=device, dtype=dt)/d_state
     q = torch.randn(batch_size*heads, d_state, device=device, dtype=dt)/d_state
     kv_state_t = kv_state.transpose(1,2).contiguous() # We prefer the other order for iteration.
-
-    # kv_state_ref = kv_state.detach().clone() # So that the kernel can write to different memory
-    # k_state_ref  = k_state.detach().clone()
 
     # run implementations
     out_ref, kv_state_ref, k_state_ref, _   = pytorch_step(kv_state=kv_state, kv_state_t=kv_state_t, k_state=k_state, v=v, k=k, q=q)
