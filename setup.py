@@ -1,5 +1,14 @@
 from setuptools import setup
 
+
+
+# ensure that torch is installed, and send to torch website if not
+try:
+    import torch
+except ModuleNotFoundError:
+    raise ValueError("Please install torch first: https://pytorch.org/get-started/locally/")
+
+
 setup(
     name='based',
     version="0.0.1",
@@ -20,7 +29,6 @@ setup(
         "transformers==4.36.2",
         "wandb==0.16.2",
         "einops==0.7.0",
-        "hydra-core==1.3.2",
         "ftfy==6.1.3",
         "lightning-bolts==0.7.0",
         "lightning-utilities==0.10.0",
@@ -37,5 +45,11 @@ setup(
         "lm-eval==0.4.1",
         "ninja==1.11.1.1",
         "flash-attn==2.5.2",
+        "causal-conv1d",
+
+        # training
+        "rich",
+        "hydra-core==1.3.2",
+        "hydra_colorlog",
     ],
 )

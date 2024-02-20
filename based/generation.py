@@ -104,6 +104,7 @@ def decode(
     tensor_parallel=1,
     cg=False,
     enable_timing=False,
+    stopping_criteria: any = None,
     **kwargs,
 ):
     """Decoding, either greedy or with top-k or top-p sampling.

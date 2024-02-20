@@ -117,7 +117,10 @@ def decode(
     vocab_size=None,
     cg=False,
     enable_timing=False,
-    streamer: Optional[TextStreamer] = None
+    streamer: Optional[TextStreamer] = None,
+    stopping_criteria: any = None,
+    pad_token_id=None,
+    **kwargs
 ):
     """Decoding, either greedy or with top-k or top-p sampling.
     If top-k = 0, don't limit the number of candidates (pure sampling).
