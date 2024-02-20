@@ -36,7 +36,7 @@ datamodule:
   num_test_samples: 1000
   num_valid_samples: 1000
 
-expt_name: 02-20-based-360m
+expt_name: 02-06-based-simple-redo14
 name: ${.expt_name}
 
 callbacks:
@@ -82,7 +82,7 @@ model:
 
     alt_mixer_2:
       _target_: based.models.mixers.slide_attention.SlidingAttention
-      window_size: 128 
+      window_size: 128  # since the 
       num_heads: 16
       causal: true
 

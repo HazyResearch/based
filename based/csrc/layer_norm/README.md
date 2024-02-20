@@ -1,3 +1,4 @@
+Source: Tri Dao, Flash attention
 This CUDA extension implements fused dropout + residual + LayerNorm, building on
 Apex's [FastLayerNorm](https://github.com/NVIDIA/apex/tree/master/apex/contrib/layer_norm).
 Major changes:
