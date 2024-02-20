@@ -13,6 +13,7 @@ zoo_train/checkpoints
 *.so
 *.feather
 *.npy
+logs
 
 
 # Distribution / packaging

@@ -82,7 +82,16 @@ bash run_harness.sh
 
 ## Experiments on Synthetic Data
 TODO: Update this. 
+
+
+
+
+
+## Citation and Acknowledgements
+```
 ```
 
 
-
+This project was made possible by a number of open source projects. Notably:
+- Our training code and sliding window implementation are based on Tri Dao's [FlashAttention](https://github.com/Dao-AILab/flash-attention). 
+- We use the EleutherAI's [lm-evaluation-harness](https://github.com/EleutherAI/lm-evaluation-harness) for evaluation. 

@@ -36,7 +36,7 @@ datamodule:
   num_test_samples: 1000
   num_valid_samples: 1000
 
-expt_name: 02-19-based-1b
+expt_name: 02-20-based-1b
 name: ${.expt_name}
 
 callbacks:
@@ -70,12 +70,11 @@ model:
       - 34
 
     mixer:
-      _target_: based.models.mixers.base_conv.BaseConv
+      _target_: based.models.mixers.convolution.BaseConv
       l_max: ${....datamodule.max_length}
       use_bias: True
       expand_proj: 4
       kernel_sizes: 3
-
 
     alt_mixer: 
       _target_: based.models.mixers.linear_attention.LinearAttention  
@@ -86,13 +85,11 @@ model:
       feature_dim: 16
       num_heads: 16
 
-
     alt_mixer_2:
-      _target_: based.models.mixers.sliding_attention.SlidingAttention  
+      _target_: based.models.mixers.slide_attention.SlidingAttention
       window_size: 128
       num_heads: 16
       causal: true
-      do_update: true
 
     n_embd: 1792
     fixed_decay: True      # flag 

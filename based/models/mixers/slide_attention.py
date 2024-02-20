@@ -1,4 +1,5 @@
 # Copyright (c) 2023, Tri Dao.
+# Adapted by Simran Arora and Sabri Eyuboglu.
 
 import math
 from functools import partial
@@ -9,19 +10,15 @@ from einops import rearrange, repeat
 
 from flash_attn.utils.distributed import get_dim_for_local_rank
 
-# try:
 from flash_attn import (
-        flash_attn_kvpacked_func,
-        flash_attn_qkvpacked_func,
-        flash_attn_varlen_kvpacked_func,
-        flash_attn_varlen_qkvpacked_func,
-        flash_attn_with_kvcache,
-        flash_attn_func,
-    )
-# except ImportError:
-#     flash_attn_varlen_qkvpacked_func, flash_attn_varlen_kvpacked_func = None, None
-#     flash_attn_qkvpacked_func, flash_attn_kvpacked_func = None, None
-#     flash_attn_with_kvcache = None
+    flash_attn_kvpacked_func,
+    flash_attn_qkvpacked_func,
+    flash_attn_varlen_kvpacked_func,
+    flash_attn_varlen_qkvpacked_func,
+    flash_attn_with_kvcache,
+    flash_attn_func,
+)
+
 
 import inspect
 _flash_supports_window_size = "window_size" in list(inspect.signature(flash_attn_func).parameters)
@@ -279,8 +276,8 @@ def _update_kv_cache(kv, inference_params, layer_idx):
     batch_end = batch_start + kv.shape[0]
     sequence_start = inference_params.seqlen_offset
     sequence_end = sequence_start + kv.shape[1]
-    assert batch_end <= (kv_cache.shape[0] if kv_cache is not None else v_cache.shape[0])
-    assert sequence_end <= (kv_cache.shape[1] if kv_cache is not None else v_cache.shape[2])
+    assert batch_end <= (kv_cache.shape[0] if kv_cache is not None else kv_cache.shape[0])
+    assert sequence_end <= (kv_cache.shape[1] if kv_cache is not None else kv_cache.shape[2])
     assert kv_cache is not None
     kv_cache[batch_start:batch_end, sequence_start:sequence_end, ...] = kv
     return kv_cache[batch_start:batch_end, :sequence_end, ...]
@@ -301,7 +298,6 @@ class SlidingAttention(nn.Module):
         softmax_scale=None,
         causal=True,
         layer_idx=None,
-        dwconv=False,
         rotary_emb_dim=0,
         rotary_emb_base=10000.0,
         rotary_emb_scale_base=None,
@@ -310,12 +306,7 @@ class SlidingAttention(nn.Module):
         use_flash_attn=True,
         return_residual=False,
         checkpointing=False,
-
-        # SA: additions for Based
         window_size=128,
-        do_update=False,
-        batch_size=-1,
-
         device=None,
         dtype=None,
     ) -> None:
@@ -345,7 +336,6 @@ class SlidingAttention(nn.Module):
             self.window = None
         else:
             self.window = (window_size//2, 0)
-        # print(f"{self.rotary_emb_dim=} {self.use_flash_attn=} {self.return_residual=} {self.checkpointing=} {self.window=}, {self.causal=}")
 
         self.num_heads = num_heads
         self.num_heads_kv = num_heads_kv if num_heads_kv is not None else num_heads
@@ -564,18 +554,15 @@ class SlidingAttention(nn.Module):
                 or not self.use_flash_attn
             ):
                 if self.rotary_emb_dim > 0:
-                    # breakpoint()
                     qkv = self.rotary_emb(
                         qkv, seqlen_offset=seqlen_offset, max_seqlen=rotary_max_seqlen
                     )
                 if inference_params is None:
-                    # print("Running prefill...")
                     if not self.checkpointing:
                         context = self.inner_attn(qkv, **kwargs)
                     else:
                         context = torch.utils.checkpoint.checkpoint(self.inner_attn, qkv, **kwargs)
                 else:
-                    # breakpoint()
                     context = self._update_kvcache_attention(
                         qkv[:, :, 0], qkv[:, :, 1:], inference_params
                     )
