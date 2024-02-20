@@ -55,12 +55,11 @@ def based_step_test(kv_state, kv_state_t, k_state, q, k, v):
 
 
 def based_step_benchmark(dt, device='cuda'):
-    num_iters = 4
-    j_vals = [100, 250, 500, 750]
-    
+    num_iters = 10
+
     methods = {
         'Pure PyTorch': pytorch_step, 
-        'based': based_step_test,
+        'Based Kernel': based_step_test,
     }
     method2timing = defaultdict(dict)
     for b in [8, 16, 32, 64, 128, 256]:
