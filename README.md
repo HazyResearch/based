@@ -47,12 +47,6 @@ We are releasing the following checkpoints for research, trained at the 360M and
 | Based        | 1.4b | 10b   | [02-21-based-1b](https://wandb.ai/hazy-research/based/runs/02-21-based-1b)    |[hazyresearch/based-1.3b](https://huggingface.co/hazyresearch/based-1.3b)      |train/configs/experiment/reference/based-1b.yaml | |
 
 
-<!-- | Based        | 1.4b |   | |  |  |  |
-| ---          | ---  | --- | ---   | --- | --- | --- |
-| Attention |  |  |  |  |  |
-| Attention |  |  |  |  |  |
-| Mamba |  |  |  |  |  |
-| Mamba |  |  |  |  |  | -->
 
 To use the Transformer and Mamba checkpoints, you will need the following installations:
 ```bash
@@ -64,6 +58,17 @@ pip install flash_attn
 
 
 ## Train
+In order to train a new model with our setup, you'll need to do a bit more setup: 
+```python
+# install train extra dependencies
+pip install -e .[train]
+
+# install apex
+git clone https://github.com/NVIDIA/apex
+cd apex
+pip install -v --disable-pip-version-check --no-cache-dir --no-build-isolation --config-settings "--build-option=--cpp_ext" --config-settings "--build-option=--cuda_ext" ./
+cd ..
+```
 
 To train a new model, construct a config.yaml file at ```based/configs/experiment/```. We are including the configs used to produce the pretrained checkpoints for the paper (released on HF below) at ```based/configs/experiment/reference/```.
 
