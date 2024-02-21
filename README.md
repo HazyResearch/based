@@ -32,13 +32,27 @@ pip install -e .
 ## Pretrained Checkpoints
 
 We are releasing the following checkpoints for research, trained at the 360M and 1.3Bn parameter scales. Each checkpoint is trained on the same 10Bn tokens of the Pile corpus, using the same data order. The checkpoints are trained using the same code and infrastructure.  
-- 360M parameters
+
+
+<!-- - 360M parameters
     - [Based 360M]
 - 1.3Bn parameters
     - [Based 1.3Bn](https://huggingface.co/hazyresearch/based-1.3b)
     - [Mamba 1.3Bn](https://huggingface.co/hazyresearch/mamba-1.3b)
-    - [Transformer++ 1.3Bn](https://huggingface.co/hazyresearch/transformer-pp-1.3b). Transformer++ refers to the modern [Llama Architecture](https://github.com/facebookresearch/llama), which uses SwiGLU, Rotary, RMSNorm. 
+    - [Transformer++ 1.3Bn](https://huggingface.co/hazyresearch/transformer-pp-1.3b). Transformer++ refers to the modern [Llama Architecture](https://github.com/facebookresearch/llama), which uses SwiGLU, Rotary, RMSNorm.  -->
 
+| Architecture | Size | Tokens| WandB | HuggingFace | Config | Notes |
+| ---          | ---  | ---   | ---   | --- | --- | --- |
+| Based        | 360m | 10b   |[02-20-based-360m](https://wandb.ai/hazy-research/based/runs/02-20-based-360m) |     |train/configs/experiment/reference/based-360m.yaml |  |
+| Based        | 1.4b | 10b   | [02-21-based-1b](https://wandb.ai/hazy-research/based/runs/02-21-based-1b)    |[hazyresearch/based-1.3b](https://huggingface.co/hazyresearch/based-1.3b)      |train/configs/experiment/reference/based-1b.yaml | |
+
+
+<!-- | Based        | 1.4b |   | |  |  |  |
+| ---          | ---  | --- | ---   | --- | --- | --- |
+| Attention |  |  |  |  |  |
+| Attention |  |  |  |  |  |
+| Mamba |  |  |  |  |  |
+| Mamba |  |  |  |  |  | -->
 
 To use the Transformer and Mamba checkpoints, you will need the following installations:
 ```bash
@@ -94,4 +108,4 @@ TODO: Update this.
 
 This project was made possible by a number of open source projects. Notably:
 - Our training code and sliding window implementation are based on Tri Dao's [FlashAttention](https://github.com/Dao-AILab/flash-attention). 
-- We use the EleutherAI's [lm-evaluation-harness](https://github.com/EleutherAI/lm-evaluation-harness) for evaluation. 
+- We use EleutherAI's [lm-evaluation-harness](https://github.com/EleutherAI/lm-evaluation-harness) for evaluation. 
