@@ -42,7 +42,7 @@ name: ${.expt_name}
 
 callbacks:
   model_checkpoint:
-    dirpath: /var/cr01_data/sim_data/checkpoints/${expt_name}
+    dirpath: /var/cr01_data/sabri_data/checkpoints/${expt_name}
 
 resume: True
 

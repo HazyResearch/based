@@ -43,8 +43,8 @@ We are releasing the following checkpoints for research, trained at the 360M and
 
 | Architecture | Size | Tokens| WandB | HuggingFace | Config | Notes |
 | ---          | ---  | ---   | ---   | --- | --- | --- |
-| Based        | 360m | 10b   |[02-20-based-360m](https://wandb.ai/hazy-research/based/runs/02-20-based-360m) |     |train/configs/experiment/reference/based-360m.yaml |  |
-| Based        | 1.4b | 10b   | [02-21-based-1b](https://wandb.ai/hazy-research/based/runs/02-21-based-1b)    |[hazyresearch/based-1.3b](https://huggingface.co/hazyresearch/based-1.3b)      |train/configs/experiment/reference/based-1b.yaml | |
+| Based        | 360m | 10b   |[02-20-based-360m](https://wandb.ai/hazy-research/based/runs/02-20-based-360m) |[hazyresearch/based-360m](https://huggingface.co/hazyresearch/based-360m)     |train/configs/experiment/reference/based-360m.yaml |  |
+| Based        | 1.4b | 10b   |[02-21-based-1b](https://wandb.ai/hazy-research/based/runs/02-21-based-1b)     |[hazyresearch/based-1.3b](https://huggingface.co/hazyresearch/based-1.3b)      |train/configs/experiment/reference/based-1b.yaml | |
 
 
 
@@ -54,6 +54,8 @@ To use the Transformer and Mamba checkpoints, you will need the following instal
 pip install flash_attn
 
 # mamba
+pip install mamba-ssm
+
 ```
 
 
