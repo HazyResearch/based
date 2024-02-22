@@ -32,13 +32,41 @@ pip install -e .
 ## Pretrained Checkpoints
 
 We are releasing the following checkpoints for research, trained at the 360M and 1.3Bn parameter scales. Each checkpoint is trained on the same 10Bn tokens of the Pile corpus, using the same data order. The checkpoints are trained using the same code and infrastructure.  
-- 360M parameters
+
+Use the code below to load any of the checkpoints:
+```python  
+from transformers import AutoTokenizer
+from based.models.gpt import GPTLMHeadModel
+
+tokenizer = AutoTokenizer.from_pretrained("gpt2")
+model = GPTLMHeadModel.from_pretrained_hf("hazyresearch/based-360m").to("cuda")
+```
+<!-- - 360M parameters
     - [Based 360M]
 - 1.3Bn parameters
     - [Based 1.3Bn](https://huggingface.co/hazyresearch/based-1.3b)
     - [Mamba 1.3Bn](https://huggingface.co/hazyresearch/mamba-1.3b)
-    - [Transformer++ 1.3Bn](https://huggingface.co/hazyresearch/transformer-pp-1.3b). Transformer++ refers to the modern [Llama Architecture](https://github.com/facebookresearch/llama), which uses SwiGLU, Rotary, RMSNorm. 
+    - [Transformer++ 1.3Bn](https://huggingface.co/hazyresearch/transformer-pp-1.3b). Transformer++ refers to the modern [Llama Architecture](https://github.com/facebookresearch/llama), which uses SwiGLU, Rotary, RMSNorm.  -->
 
+| Architecture | Size | Tokens| WandB | HuggingFace | Config | Notes |
+| ---          | ---  | ---   | ---   | --- | --- | --- |
+| Based        | 360m | 10b   |[02-20-based-360m](https://wandb.ai/hazy-research/based/runs/02-20-based-360m) |[hazyresearch/based-360m](https://huggingface.co/hazyresearch/based-360m)     |reference/based-360m.yaml |  |
+| Based        | 1.4b | 10b   |[02-21-based-1b](https://wandb.ai/hazy-research/based/runs/02-21-based-1b)     |[hazyresearch/based-1.3b](https://huggingface.co/hazyresearch/based-1.3b)      |reference/based-1b.yaml | |
+| Attention    | 360m | 10b   |[02-21-attn-360m](https://wandb.ai/hazy-research/based/runs/02-21-attn-360m-redo1) |[hazyresearch/attn-360m](https://huggingface.co/hazyresearch/attn-360m)     |reference/attn-360m.yaml |  |
+| Mamba        | 360m | 10b   |[02-21-mamba-360m](https://wandb.ai/hazy-research/based/runs/02-21-mamba-360m) |[hazyresearch/mamba-360m](https://huggingface.co/hazyresearch/mamba-360m)     |reference/mamba-360m.yaml |  |
+
+
+
+**Warning.** We are releasing these models for the purpose of efficient architecture research. Because they have not been instruction fine-tuned or audited, they are not intended for use in any downstream applications. 
+
+You can try running a simple text generation with the following. 
+```python
+input = tokenizer.encode("If I take one more step, it will be", return_tensors="pt").to("cuda")
+output = model.generate(input, max_length=20)
+print(tokenizer.decode(output[0]))
+```
+
+**Note.** for the checkpoints from other models, you will need to install other dependencies. 
 
 To use the Transformer and Mamba checkpoints, you will need the following installations:
 ```bash
@@ -46,10 +74,22 @@ To use the Transformer and Mamba checkpoints, you will need the following instal
 pip install flash_attn
 
 # mamba
+pip install mamba-ssm
 ```
 
 
 ## Train
+In order to train a new model with our setup, you'll need to do a bit more setup: 
+```python
+# install train extra dependencies
+pip install -e .[train]
+
+# install apex
+git clone https://github.com/NVIDIA/apex
+cd apex
+pip install -v --disable-pip-version-check --no-cache-dir --no-build-isolation --config-settings "--build-option=--cpp_ext" --config-settings "--build-option=--cuda_ext" ./
+cd ..
+```
 
 To train a new model, construct a config.yaml file at ```based/configs/experiment/```. We are including the configs used to produce the pretrained checkpoints for the paper (released on HF below) at ```based/configs/experiment/reference/```.
 
@@ -94,4 +134,4 @@ TODO: Update this.
 
 This project was made possible by a number of open source projects. Notably:
 - Our training code and sliding window implementation are based on Tri Dao's [FlashAttention](https://github.com/Dao-AILab/flash-attention). 
-- We use the EleutherAI's [lm-evaluation-harness](https://github.com/EleutherAI/lm-evaluation-harness) for evaluation. 
+- We use EleutherAI's [lm-evaluation-harness](https://github.com/EleutherAI/lm-evaluation-harness) for evaluation. 

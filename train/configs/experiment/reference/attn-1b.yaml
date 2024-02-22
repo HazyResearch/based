@@ -25,33 +25,27 @@ trainer:
   val_check_interval: ${eval:1000 * ${.accumulate_grad_batches}}
   max_steps: 20000
 
+expt_name: 02-21-attn-1b
+name: ${.expt_name}
+
+callbacks:
+  model_checkpoint:
+    dirpath: /var/cr05_data/sabri_data/checkpoints/${expt_name}
 
 datamodule:
   _target_: train.datamodules.language_modeling_neox.NeoxLMDataModule   
-  batch_size: 16  # per gpu
-  batch_size_eval: 32
-  num_predict_batches_eval: 100
+  batch_size: 8  # per gpu
+  batch_size_eval: 8
   global_batch_size: ${..train.global_batch_size}
   max_steps: ${..trainer.max_steps}
   num_test_samples: 1000
   num_valid_samples: 1000
 
-
-expt_name: 02-21-attn-360m-redo1
-name: ${.expt_name}
-
-
-callbacks:
-  model_checkpoint:
-    dirpath: /var/cr01_data/sabri_data/checkpoints/${expt_name}
-
-resume: True
-
 model:
   config:
-    n_embd: 1024
-    n_head: 16
-    n_layer: 24
+    n_embd: 1680
+    n_head: 24
+    n_layer: 36
     _target_: "transformers.GPT2Config"
     rms_norm: true
     fused_mlp: false

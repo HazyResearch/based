@@ -1,6 +1,7 @@
 # @package _global_
 defaults:
   - /experiment/pile/gpt3m-flash.yaml
+  - override /model: mamba
 
 train: 
   optimizer:
@@ -19,6 +20,14 @@ train:
     warmup_prefix: true
     warmup_lr_init: 0.000001
 
+expt_name: 02-22-mamba-1b
+name: ${.expt_name}
+
+callbacks:
+  model_checkpoint:
+    dirpath: /var/cr05_data/sabri_data/checkpoints/${expt_name}
+
+
 trainer: 
   # this interval is in terms of batch_idx not in terms of global_step, so we need 
   # to multiply by accumulate_grad_batches
@@ -28,51 +37,17 @@ trainer:
 
 datamodule:
   _target_: train.datamodules.language_modeling_neox.NeoxLMDataModule   
-  batch_size: 16  # per gpu
-  batch_size_eval: 32
-  num_predict_batches_eval: 100
+  batch_size: 8  # per gpu
+  batch_size_eval: 8
   global_batch_size: ${..train.global_batch_size}
   max_steps: ${..trainer.max_steps}
   num_test_samples: 1000
   num_valid_samples: 1000
 
-
-expt_name: 02-21-attn-360m-redo1
-name: ${.expt_name}
-
-
-callbacks:
-  model_checkpoint:
-    dirpath: /var/cr01_data/sabri_data/checkpoints/${expt_name}
-
-resume: True
-
 model:
   config:
-    n_embd: 1024
-    n_head: 16
-    n_layer: 24
-    _target_: "transformers.GPT2Config"
+    d_model: 2048
+    n_layer: 46
     rms_norm: true
-    fused_mlp: false
-    attn_pdrop: 0
-    embd_pdrop: 0
-    n_positions: 2048
-    resid_pdrop: 0
-    mlp_fc1_bias: false
-    mlp_fc2_bias: false
-    fused_bias_fc: true
-    out_proj_bias: false
-    qkv_proj_bias: false
-    use_flash_attn: true
     residual_in_fp32: true
-    activation_function: "swiglu" # flag
-    rotary_emb_fraction: 0.5
-    fused_dropout_add_ln: true
-    max_position_embeddings: 0
     pad_vocab_size_multiple: 16
-    reorder_and_upcast_attn: false
-    scale_attn_by_inverse_layer_idx: false
-
-    # mlp_type: "alt"   # flagging alt MLP (Simran)
-    ff_mult: 4        # flagging alt MLP (Simran)

@@ -21,7 +21,7 @@ try:
 except ImportError:
     RMSNorm, layer_norm_fn, rms_norm_fn = None, None, None
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, asdict
 
 
 @dataclass
@@ -44,6 +44,9 @@ class MambaConfig:
     fused_mlp: bool = False
     fused_bias_fc: bool = False
     use_fast_path: bool = True
+
+    def to_dict(self):
+        return asdict(self)
 
 
 def create_block(
