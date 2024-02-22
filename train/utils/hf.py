@@ -96,6 +96,6 @@ def _unflatten_dict(d: dict) -> dict:
 
 if __name__ == "__main__":
     upload_model_hf(
-        wandb_path="hazy-research/based/02-21-attn-360m-redo1",
-        hf_path=f"hazyresearch/attn-360m",
+        wandb_path="hazy-research/based/02-21-mamba-360m",
+        hf_path=f"hazyresearch/mamba-360m",
     )
