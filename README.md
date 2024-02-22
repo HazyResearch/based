@@ -42,6 +42,14 @@ tokenizer = AutoTokenizer.from_pretrained("gpt2")
 model = GPTLMHeadModel.from_pretrained_hf("hazyresearch/based-360m")
 ```
 
+You can try running some simple generations. 
+```python
+model.to("cuda")
+input = tokenizer.encode("If I take one more step, it will be", return_tensors="pt").to("cuda")
+output = model.generate(input, max_length=20)
+print(tokenizer.decode(output[0]))
+```
+
 Note: for the checkpoints from other models, you will need to install other dependencies. 
 
 <!-- - 360M parameters
