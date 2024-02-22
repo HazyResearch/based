@@ -41,17 +41,6 @@ from based.models.gpt import GPTLMHeadModel
 tokenizer = AutoTokenizer.from_pretrained("gpt2")
 model = GPTLMHeadModel.from_pretrained_hf("hazyresearch/based-360m").to("cuda")
 ```
-
-**Warning.** We are releasing these models for the purpose of efficient architecture research. Because they have not been instruction fine-tuned or audited, they are not intended for use in any downstream applications. 
-
-You can try running a simple text generation with the following. 
-```python
-input = tokenizer.encode("If I take one more step, it will be", return_tensors="pt").to("cuda")
-output = model.generate(input, max_length=20)
-print(tokenizer.decode(output[0]))
-```
-
-
 <!-- - 360M parameters
     - [Based 360M]
 - 1.3Bn parameters
@@ -63,6 +52,15 @@ print(tokenizer.decode(output[0]))
 | ---          | ---  | ---   | ---   | --- | --- | --- |
 | Based        | 360m | 10b   |[02-20-based-360m](https://wandb.ai/hazy-research/based/runs/02-20-based-360m) |[hazyresearch/based-360m](https://huggingface.co/hazyresearch/based-360m)     |train/configs/experiment/reference/based-360m.yaml |  |
 | Based        | 1.4b | 10b   |[02-21-based-1b](https://wandb.ai/hazy-research/based/runs/02-21-based-1b)     |[hazyresearch/based-1.3b](https://huggingface.co/hazyresearch/based-1.3b)      |train/configs/experiment/reference/based-1b.yaml | |
+
+**Warning.** We are releasing these models for the purpose of efficient architecture research. Because they have not been instruction fine-tuned or audited, they are not intended for use in any downstream applications. 
+
+You can try running a simple text generation with the following. 
+```python
+input = tokenizer.encode("If I take one more step, it will be", return_tensors="pt").to("cuda")
+output = model.generate(input, max_length=20)
+print(tokenizer.decode(output[0]))
+```
 
 **Note.** for the checkpoints from other models, you will need to install other dependencies. 
 
