@@ -33,6 +33,16 @@ pip install -e .
 
 We are releasing the following checkpoints for research, trained at the 360M and 1.3Bn parameter scales. Each checkpoint is trained on the same 10Bn tokens of the Pile corpus, using the same data order. The checkpoints are trained using the same code and infrastructure.  
 
+To load any of the checkpoints below:
+```python  
+from transformers import AutoTokenizer
+from based.models.gpt import GPTLMHeadModel
+
+tokenizer = AutoTokenizer.from_pretrained("gpt2")
+model = GPTLMHeadModel.from_pretrained_hf("hazyresearch/based-360m")
+```
+
+Note: for the checkpoints from other models, you will need to install other dependencies. 
 
 <!-- - 360M parameters
     - [Based 360M]
@@ -47,7 +57,6 @@ We are releasing the following checkpoints for research, trained at the 360M and
 | Based        | 1.4b | 10b   |[02-21-based-1b](https://wandb.ai/hazy-research/based/runs/02-21-based-1b)     |[hazyresearch/based-1.3b](https://huggingface.co/hazyresearch/based-1.3b)      |train/configs/experiment/reference/based-1b.yaml | |
 
 
-
 To use the Transformer and Mamba checkpoints, you will need the following installations:
 ```bash
 # transformer
@@ -55,7 +64,6 @@ pip install flash_attn
 
 # mamba
 pip install mamba-ssm
-
 ```
 
 
