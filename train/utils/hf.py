@@ -7,15 +7,9 @@ from transformers.utils.hub import cached_file
 
 
 def upload_model_hf(
-    wandb_path: str="hazy-research/based/02-20-based-360m",
-    hf_path: str=f"HazyResearch/based-360m",
+    wandb_path: str="hazy-research/based/02-21-attn-360m-redo1",
+    hf_path: str=f"HazyResearch/attn-360m",
 ):
-    """
-    Load a config from a wandb run ID.
-    
-    Parameters:
-        run_id (str): A full wandb run id like "hazy-research/attention/159o6asi"
-    """
     import wandb
     import hydra
 
@@ -53,7 +47,7 @@ def upload_model_hf(
     # 4: Save model to HF
     from huggingface_hub import HfApi
     api = HfApi()
-    api.create_repo(name=hf_path, repo_type="model", exist_ok=False)
+    api.create_repo(repo_id=hf_path, repo_type="model", exist_ok=False)
     api.upload_folder(
         folder_path=local_hf_path, repo_id=hf_path, repo_type="model",
     )
@@ -101,4 +95,7 @@ def _unflatten_dict(d: dict) -> dict:
     return result
 
 if __name__ == "__main__":
-    upload_model_hf()
+    upload_model_hf(
+        wandb_path="hazy-research/based/02-21-attn-360m-redo1",
+        hf_path=f"hazyresearch/attn-360m",
+    )

@@ -50,9 +50,11 @@ model = GPTLMHeadModel.from_pretrained_hf("hazyresearch/based-360m").to("cuda")
 
 | Architecture | Size | Tokens| WandB | HuggingFace | Config | Notes |
 | ---          | ---  | ---   | ---   | --- | --- | --- |
-| Based        | 360m | 10b   |[02-20-based-360m](https://wandb.ai/hazy-research/based/runs/02-20-based-360m) |[hazyresearch/based-360m](https://huggingface.co/hazyresearch/based-360m)     |train/configs/experiment/reference/based-360m.yaml |  |
-| Based        | 1.4b | 10b   |[02-21-based-1b](https://wandb.ai/hazy-research/based/runs/02-21-based-1b)     |[hazyresearch/based-1.3b](https://huggingface.co/hazyresearch/based-1.3b)      |train/configs/experiment/reference/based-1b.yaml | |
+| Based        | 360m | 10b   |[02-20-based-360m](https://wandb.ai/hazy-research/based/runs/02-20-based-360m) |[hazyresearch/based-360m](https://huggingface.co/hazyresearch/based-360m)     |reference/based-360m.yaml |  |
+| Based        | 1.4b | 10b   |[02-21-based-1b](https://wandb.ai/hazy-research/based/runs/02-21-based-1b)     |[hazyresearch/based-1.3b](https://huggingface.co/hazyresearch/based-1.3b)      |reference/based-1b.yaml | |
+| Attention    | 360m | 10b   |[02-21-attn-360m](https://wandb.ai/hazy-research/based/runs/02-21-attn-360m-redo1) |[hazyresearch/attn-360m](https://huggingface.co/hazyresearch/attn-360m)     |reference/attn-360m.yaml |  |
 
+https://wandb.ai/hazy-research/based/runs/02-21-attn-360m-redo1/
 **Warning.** We are releasing these models for the purpose of efficient architecture research. Because they have not been instruction fine-tuned or audited, they are not intended for use in any downstream applications. 
 
 You can try running a simple text generation with the following. 
