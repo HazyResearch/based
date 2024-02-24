@@ -28,6 +28,8 @@ trainer:
 expt_name: 02-21-attn-1b
 name: ${.expt_name}
 
+resume: true
+
 callbacks:
   model_checkpoint:
     dirpath: /var/cr05_data/sabri_data/checkpoints/${expt_name}

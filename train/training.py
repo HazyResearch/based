@@ -142,6 +142,7 @@ def train(config: DictConfig) -> Optional[float]:
     if config.get('resume'):
         try:
             checkpoint_path = Path(config.callbacks.model_checkpoint.dirpath)
+            print("HERERE", config.callbacks.model_checkpoint.dirpath, checkpoint_path.is_dir())
             if checkpoint_path.is_dir():
                 last_ckpt = checkpoint_path / 'last.ckpt'
                 autosave_ckpt = checkpoint_path / '.pl_auto_save.ckpt'
