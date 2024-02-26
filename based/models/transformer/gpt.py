@@ -327,55 +327,24 @@ class GPTPreTrainedModel(nn.Module):
             )
         self.config = config
 
+    
+            
     @classmethod
-    def from_pretrained(
-        cls,
-        model_name,
-        config,
-        *args,
-        strict=True,
-        device=None,
-        dtype=None,
-        world_size=1,
-        rank=0,
-        **kwargs,
-    ):
-        """
-        Instantiate a GPTPreTrainedModel from a pre-trained model file or a pytorch state dict.
-        Download and cache the pre-trained model file if needed.
-        """
-        # Instantiate model.
-        model = cls(config, *args, device=device, dtype=dtype, **kwargs)
-        # Load state_dict in cpu because we already initialized the model in GPU, and we don't
-        # want extra stuff taking up more GPU memory
-        state_dict = state_dict_from_pretrained(model_name, device="cpu", dtype=dtype)
-        if model_name.startswith("gpt2"):
-            state_dict = remap_state_dict_hf_gpt2(state_dict, config)
-        elif model_name.startswith("facebook/opt"):
-            state_dict = remap_state_dict_hf_opt(state_dict, config)
-        elif model_name.startswith("EleutherAI/gpt-j-") or model_name.startswith(
-            "togethercomputer/GPT-JT-"
-        ):
-            state_dict = remap_state_dict_hf_gptj(state_dict, config)
-        elif (
-            model_name.startswith("EleutherAI/gpt-neox-")
-            or model_name.startswith("EleutherAI/pythia-")
-            or model_name.startswith("togethercomputer/RedPajama-INCITE-")
-        ):
-            state_dict = remap_state_dict_hf_gpt_neox(state_dict, config)
-        elif model_name.startswith("tiiuae/falcon-"):
-            state_dict = remap_state_dict_hf_falcon(state_dict, config)
-        elif model_name.startswith("meta-llama/Llama-"):
-            state_dict = remap_state_dict_hf_llama(state_dict, config)
-        elif model_name.startswith("bigcode/") or model_name.startswith("WizardLM/"):
-            state_dict = remap_state_dict_hf_bigcode(state_dict, config)
-        else:
-            raise NotImplementedError(f"Model {model_name} not supported")
-        if world_size > 1:
-            state_dict = shard_state_dict_tp(state_dict, config, world_size, rank)
-        load_return = model.load_state_dict(state_dict, strict=strict)
-        logger.info(load_return)
-        return model
+    def from_pretrained_hf(cls, pretrained_model_name, device=None, **kwargs):
+        from based.utils.hf import load_config_hf
+
+        config_data = load_config_hf(pretrained_model_name)
+        config = GPT2Config(**config_data)
+        model = GPTLMHeadModel(config=config, device=device, dtype=torch.float16)
+        state_dict = state_dict_from_pretrained(pretrained_model_name, dtype=torch.float16)
+        # remove the 'model.' prefix from the keys
+        state_dict = {re.sub("^model\.", "", k): v for k, v in state_dict.items()}
+        # remove Unexpected key(s) in state_dict: "train_metrics.num-tokens.count", "val_metrics.num-tokens.count", "test_metrics.num-tokens.count". from the state_dict
+        state_dict = {k: v for k, v in state_dict.items() if "metrics" not in k}
+        model.load_state_dict(state_dict)
+       
+        return model.to(device=device)
+
 
 
 # https://github.com/huggingface/transformers/blob/c28d04e9e252a1a099944e325685f14d242ecdcd/src/transformers/models/gpt2/modeling_gpt2.py#L454
