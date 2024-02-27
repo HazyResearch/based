@@ -121,13 +121,13 @@ class ShortConvolution(nn.Module):
             self, 
             inference_params: InferenceParams, 
             layer_idx: int=None,
-            state: dict = None
+            key_value_memory_dict: dict = None
         ):
         """Create the state if it doesn't exist, zero it out otherwise.
         Do this recursively if the layer_idx is a tuple.
         """
-        if state is None:
-            state = inference_params.key_value_memory_dict
+        if key_value_memory_dict is None:
+            key_value_memory_dict = inference_params.key_value_memory_dict
         if layer_idx is None:
             layer_idx = self.layer_idx
 
@@ -136,19 +136,19 @@ class ShortConvolution(nn.Module):
                 batch_size=inference_params.max_batch_size,
                 max_seqlen=inference_params.max_seqlen,
             )
-            if layer_idx not in state:
+            if layer_idx not in key_value_memory_dict:
                 # SE (02/25): this is needed for when cache graph is false
-                state[layer_idx] = empty_state
+                key_value_memory_dict[layer_idx] = empty_state
             else: 
                 # SE (02/25): this is needed for when cache graph is true
-                inference_params.key_value_memory_dict[layer_idx].copy_(empty_state)
+                key_value_memory_dict[layer_idx].copy_(empty_state)
         else:
-            if layer_idx[0] not in state:
-                state[layer_idx[0]] = {}
+            if layer_idx[0] not in key_value_memory_dict:
+                key_value_memory_dict[layer_idx[0]] = {}
             self._init_state(
                 inference_params, 
                 layer_idx[1],
-                state[layer_idx[0]]
+                key_value_memory_dict[layer_idx[0]]
             )
 
     def _get_state(self, inference_params: InferenceParams, layer_idx: int=None):

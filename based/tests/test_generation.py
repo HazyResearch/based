@@ -68,30 +68,33 @@ CONFIGS = {
     ),
     "sliding": GPT2MixerConfig(
         **{
-            "_target_": "model.models.mixers.slide_attention.SlidingsMHA",  
-            "window_size": 128,
-            "num_heads": 16,
-            "causal": True,
-            "do_update": True
+            "mixer": {
+                "_target_": "based.models.mixers.slide_attention.SlidingAttention",  
+                "window_size": 128,
+                # "embed_dim": BASE_CONFIG["n_embd"],
+                "num_heads": 16,
+                "causal": True,
+                # "do_update": True
+            }, **BASE_CONFIG
         }
     ),
 }
 
 CONFIGS_TO_TEST = [
-    # "conv",
+    "conv",
     "base_conv",
-    # "linear_attn",
-    # "sliding"
+    "linear_attn",
+    "sliding"
 ]
 
 @pytest.mark.parametrize("config", CONFIGS_TO_TEST)
 @pytest.mark.parametrize("prefill_size", [1, 128])
-@pytest.mark.parametrize("cache_graph", [True, False])
+@pytest.mark.parametrize("cache_graph", [True])
 @pytest.mark.parametrize("naive_generation", [False])
 def test_generation(config: GPT2MixerConfig, prefill_size: int, cache_graph: bool, naive_generation: bool):
     config = CONFIGS[config]
     batch_size = 4
-    n_generated_tokens = 64
+    n_generated_tokens = 256
     device = "cuda"
     dtype = torch.float32
 

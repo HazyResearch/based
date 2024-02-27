@@ -146,7 +146,6 @@ class FlashCrossAttention(nn.Module):
         self.softmax_scale = softmax_scale
         self.drop = nn.Dropout(attention_dropout)
         self.window_size = window_size
-        print(f"Window size: {window_size}; is None: {window_size is None}")
 
     def forward(
         self,
