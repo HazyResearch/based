@@ -189,6 +189,7 @@ def decode(
             torch.distributed.barrier()
         start.record()
     scores, sequences = [], [input_ids]
+
     while not should_stop(sequences[-1], inference_params):
         scores.append(get_logits(sequences[-1], inference_params))
         inference_params.seqlen_offset += sequences[-1].shape[1]

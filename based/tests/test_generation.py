@@ -78,15 +78,15 @@ CONFIGS = {
 }
 
 CONFIGS_TO_TEST = [
-    "conv",
-    # "base_conv",
+    # "conv",
+    "base_conv",
     # "linear_attn",
     # "sliding"
 ]
 
 @pytest.mark.parametrize("config", CONFIGS_TO_TEST)
 @pytest.mark.parametrize("prefill_size", [1, 128])
-@pytest.mark.parametrize("cache_graph", [True])
+@pytest.mark.parametrize("cache_graph", [True, False])
 @pytest.mark.parametrize("naive_generation", [False])
 def test_generation(config: GPT2MixerConfig, prefill_size: int, cache_graph: bool, naive_generation: bool):
     config = CONFIGS[config]

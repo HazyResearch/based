@@ -55,16 +55,17 @@ class ShortConvolution(nn.Module):
         b, l, d = x.shape
         state = None
         if inference_params is not None:
-            self._set_state(inference_params)
-            state = self._get_state(inference_params)
             if inference_params.seqlen_offset > 0:
                 # check if we are after the first step of inference, step if so
+                state = self._get_state(inference_params)
                 return self.step(x, state)
-            # otherwise, we are at the first step of inference, so we update the state
-            k = min(self.kernel_size, x.shape[1])
-            breakpoint()
-            print(state)
-            state[..., -k: ] = x[:, -k:].transpose(1, 2)
+            else:
+                # otherwise, we are at the first step of inference, so we update the state
+                self._init_state(inference_params)  # create state if it doesn't exist, zero it out otherwise
+                state = self._get_state(inference_params)
+                k = min(self.kernel_size, x.shape[1])
+                state[..., -k: ] = x[:, -k:].transpose(1, 2)
+
 
         if self.use_cuda:
             if state is not None:
@@ -116,14 +117,14 @@ class ShortConvolution(nn.Module):
             dtype=self.conv.weight.dtype if dtype is None else dtype
         )
     
-    def _set_state(
+    def _init_state(
             self, 
             inference_params: InferenceParams, 
             layer_idx: int=None,
             state: dict = None
         ):
-        """Sets the state tensors for the given layer.
-        If state is already set, does nothing.
+        """Create the state if it doesn't exist, zero it out otherwise.
+        Do this recursively if the layer_idx is a tuple.
         """
         if state is None:
             state = inference_params.key_value_memory_dict
@@ -131,15 +132,20 @@ class ShortConvolution(nn.Module):
             layer_idx = self.layer_idx
 
         if isinstance(layer_idx, (int, str)):
+            empty_state = self.allocate_inference_cache(
+                batch_size=inference_params.max_batch_size,
+                max_seqlen=inference_params.max_seqlen,
+            )
             if layer_idx not in state:
-                state[layer_idx] = self.allocate_inference_cache(
-                    batch_size=inference_params.max_batch_size,
-                    max_seqlen=inference_params.max_seqlen,
-                )     
+                # SE (02/25): this is needed for when cache graph is false
+                state[layer_idx] = empty_state
+            else: 
+                # SE (02/25): this is needed for when cache graph is true
+                inference_params.key_value_memory_dict[layer_idx].copy_(empty_state)
         else:
             if layer_idx[0] not in state:
                 state[layer_idx[0]] = {}
-            self._set_state(
+            self._init_state(
                 inference_params, 
                 layer_idx[1],
                 state[layer_idx[0]]
@@ -158,7 +164,6 @@ class ShortConvolution(nn.Module):
             return self._get_state(inference_params, layer_idx[0])[layer_idx[1]]
         
 
-# deprecated
 class BaseConv(nn.Module):
     def __init__(
         self,
@@ -172,7 +177,6 @@ class BaseConv(nn.Module):
         **kwargs
     ):
         super().__init__()
-        # kernel_sizes = [3]
         
         self.d_model = d_model
         self.l_max = l_max
