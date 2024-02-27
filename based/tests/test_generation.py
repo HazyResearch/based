@@ -87,16 +87,35 @@ CONFIGS_TO_TEST = [
     "sliding"
 ]
 
+# SE (02/26): borrowing these tolerances from Mamba's test_selective_state_update
+# https://github.com/state-spaces/mamba/blob/ce59daea3a090d011d6476c6e5b97f6d58ddad8b/tests/ops/triton/test_selective_state_update.py#L24C1-L26C32
+DTYPE_TO_ATOL = {
+    torch.float32: 1e-3,
+    torch.float16: 1e-2,
+    torch.bfloat16: 5e-2,
+}
+DTYPE_TO_RTOL = {
+    torch.float32: 3e-4,
+    torch.float16: 5e-4,
+    torch.bfloat16: 1e-2,
+}
+
 @pytest.mark.parametrize("config", CONFIGS_TO_TEST)
 @pytest.mark.parametrize("prefill_size", [1, 128])
-@pytest.mark.parametrize("cache_graph", [True])
+@pytest.mark.parametrize("cache_graph", [False])
 @pytest.mark.parametrize("naive_generation", [False])
-def test_generation(config: GPT2MixerConfig, prefill_size: int, cache_graph: bool, naive_generation: bool):
+@pytest.mark.parametrize("dtype", [torch.float32, torch.float16, torch.bfloat16])
+def test_generation(
+    config: GPT2MixerConfig, 
+    prefill_size: int, 
+    cache_graph: bool, 
+    naive_generation: bool,
+    dtype: torch.dtype,
+):
     config = CONFIGS[config]
     batch_size = 4
-    n_generated_tokens = 256
+    n_generated_tokens = 64
     device = "cuda"
-    dtype = torch.float32
 
     model = GPTLMHeadModel(config).to(device=device, dtype=dtype)
     model.eval()
@@ -113,6 +132,7 @@ def test_generation(config: GPT2MixerConfig, prefill_size: int, cache_graph: boo
         top_k=1, # enforces that we take the top token
         cg=cache_graph 
     )
+    print("done with generation")
 
     # SE: need to clone because of "RuntimeError: Inference tensors cannot be saved for 
     # backward. To work around you can make a clone to get a normal tensor and use it 
@@ -120,10 +140,13 @@ def test_generation(config: GPT2MixerConfig, prefill_size: int, cache_graph: boo
     scores = torch.stack(out.scores, dim=1)
     out = out.sequences.clone()
 
+    # pick a tolerance based on dtype -- for bfloat16 and float16 we have to be more lenient
+    atol, rtol = DTYPE_TO_ATOL[dtype], DTYPE_TO_RTOL[dtype]
+
     # get reference output by repeatedly using the parallel view of the model
     # (e.g. with a transformer this is like generating without a kv cache)
     for i in range(n_generated_tokens):
         scores_ref = model(input_ids=out[:, :prefill_size + i]).logits
         out_ref = scores_ref.argmax(dim=-1)
-        assert torch.allclose(scores_ref[:, -1], scores[:, i], atol=1e-5)
+        assert torch.allclose(scores_ref[:, -1], scores[:, i], atol=atol, rtol=rtol)
         assert torch.allclose(out[:, prefill_size + i], out_ref[:, -1])

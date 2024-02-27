@@ -38,7 +38,7 @@ from flash_attn.utils.distributed import (
     get_dim_for_local_rank,
     sync_shared_params,
 )
-from based.generation import GenerationMixin
+from based.generation import GenerationMixin, NaiveGenerationMixin
 from flash_attn.utils.pretrained import state_dict_from_pretrained
 
 try:
@@ -545,7 +545,7 @@ class GPTModel(GPTPreTrainedModel):
         return hidden_states
 
 
-class GPTLMHeadModel(GPTPreTrainedModel, GenerationMixin):
+class GPTLMHeadModel(GPTPreTrainedModel, GenerationMixin, NaiveGenerationMixin):
     def __init__(self, config: GPT2Config, process_group=None, device=None, dtype=None):
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(config)
