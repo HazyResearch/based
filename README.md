@@ -139,6 +139,10 @@ TODO: Update this.
 ```
 
 
-This project was made possible by a number of open source projects. Notably:
+This project was made possible by a number of other open source projects. Notably:
 - Our training code and sliding window implementation are based on Tri Dao's [FlashAttention](https://github.com/Dao-AILab/flash-attention). 
 - We use EleutherAI's [lm-evaluation-harness](https://github.com/EleutherAI/lm-evaluation-harness) for evaluation. 
+
+Models in this project were trained using compute provided by:  
+- [Together.ai](https://www.together.ai/)
+- Google Cloud Platform through [Stanford HAI](https://hai.stanford.edu/call-google-cloud-credit-proposals)

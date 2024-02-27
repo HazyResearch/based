@@ -62,6 +62,8 @@ class ShortConvolution(nn.Module):
                 return self.step(x, state)
             # otherwise, we are at the first step of inference, so we update the state
             k = min(self.kernel_size, x.shape[1])
+            breakpoint()
+            print(state)
             state[..., -k: ] = x[:, -k:].transpose(1, 2)
 
         if self.use_cuda:

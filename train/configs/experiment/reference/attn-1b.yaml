@@ -25,7 +25,7 @@ trainer:
   val_check_interval: ${eval:1000 * ${.accumulate_grad_batches}}
   max_steps: 20000
 
-expt_name: 02-21-attn-1b
+expt_name: 02-25-attn-1b
 name: ${.expt_name}
 
 resume: true

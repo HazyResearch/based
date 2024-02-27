@@ -45,6 +45,9 @@ _OPTIONAL = {
         "lightning-utilities==0.10.0",
         "pytorch-lightning==1.8.6",
         "timm"
+    ],
+    "dev": [
+        "pytest"
     ]
 }
 
