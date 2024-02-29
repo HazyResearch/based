@@ -447,7 +447,6 @@ class SlidingAttention(nn.Module):
             )
             in_dtype = q.dtype
             if q.dtype not in [torch.float16, torch.bfloat16]:
-                print("here")
                 q = q.to(torch.float16)
                 kv_cache = kv_cache.to(torch.float16)
                 kv = kv.to(torch.float16)
