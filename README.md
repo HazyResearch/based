@@ -130,7 +130,10 @@ bash run_harness.sh
 
 
 ## Experiments on Synthetic Data
-TODO: Update this. 
+In our paper, we demonstrate the recall-throughput tradeoff using a synthetic associative recall task (see Figure 2 and 3). 
+The code for reproducing these figures is provided in a separate repository: [HazyResearch/zoology](https://github.com/HazyResearch/zoology). 
+
+
 
 
 
