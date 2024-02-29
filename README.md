@@ -132,16 +132,14 @@ bash run_harness.sh
 ## Experiments on Synthetic Data
 In our paper, we demonstrate the recall-throughput tradeoff using a synthetic associative recall task (see Figure 2, below, and Figure 3 in the paper). 
 <div align="center" >
-    <img src="assets/tradeoff.png" height=100 alt="" style="margin-bottom:px"/> 
+    <img src="assets/tradeoff.png" height=200 alt="" style="margin-bottom:px"/> 
 </div>
 
-The code for reproducing these figures is provided in a separate repository: [HazyResearch/zoology](https://github.com/HazyResearch/zoology). 
+The code for reproducing these figures is provided in a separate repository: [HazyResearch/zoology](https://github.com/HazyResearch/zoology). Follow the setup instruction in the Zoology README. The instructions for reproducing the are provided in [zoology/experiments](https://github.com/HazyResearch/zoology/tree/main/zoology/experiments). For example, you can create the figure above using. 
 
-Follow the setup instruction in the Zoology README there and then run: 
 ```
 python -m zoology.launch zoology/experiments/arxiv24_based_figure2/configs.py -p
 ```
-
 
 ## Citation and Acknowledgements
 ```
