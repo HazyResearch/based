@@ -41,12 +41,7 @@ from based.models.gpt import GPTLMHeadModel
 tokenizer = AutoTokenizer.from_pretrained("gpt2")
 model = GPTLMHeadModel.from_pretrained_hf("hazyresearch/based-360m").to("cuda")
 ```
-<!-- - 360M parameters
-    - [Based 360M]
-- 1.3Bn parameters
-    - [Based 1.3Bn](https://huggingface.co/hazyresearch/based-1.3b)
-    - [Mamba 1.3Bn](https://huggingface.co/hazyresearch/mamba-1.3b)
-    - [Transformer++ 1.3Bn](https://huggingface.co/hazyresearch/transformer-pp-1.3b). Transformer++ refers to the modern [Llama Architecture](https://github.com/facebookresearch/llama), which uses SwiGLU, Rotary, RMSNorm.  -->
+
 
 | *Architecture* | *Size* | *Tokens*| *WandB* | *HuggingFace* | *Config* | *Notes* |
 | ---          | ---  | ---   | ---   | --- | --- | --- |
