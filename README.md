@@ -1,10 +1,11 @@
 <div align="center" >
     <img src="banner.png" height=120 alt="" style="margin-bottom:px"/> 
 
+**Simple linear attention language models balance the recall-throughput tradeoff.**
+
 [![GitHub](https://img.shields.io/github/license/HazyResearch/meerkat)](https://img.shields.io/github/license/HazyResearch/meerkat)
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/pre-commit/pre-commit)
 
-**Simple linear attention language models balance the recall-throughput tradeoff.**
 
 
 </div>
