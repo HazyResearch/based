@@ -48,7 +48,7 @@ model = GPTLMHeadModel.from_pretrained_hf("hazyresearch/based-360m").to("cuda")
     - [Mamba 1.3Bn](https://huggingface.co/hazyresearch/mamba-1.3b)
     - [Transformer++ 1.3Bn](https://huggingface.co/hazyresearch/transformer-pp-1.3b). Transformer++ refers to the modern [Llama Architecture](https://github.com/facebookresearch/llama), which uses SwiGLU, Rotary, RMSNorm.  -->
 
-| Architecture | Size | Tokens| WandB | HuggingFace | Config | Notes |
+| *Architecture* | *Size* | *Tokens*| *WandB* | *HuggingFace* | *Config* | *Notes* |
 | ---          | ---  | ---   | ---   | --- | --- | --- |
 | **Based**        | 360m | 10b   |[02-20-based-360m](https://wandb.ai/hazy-research/based/runs/02-20-based-360m) |[hazyresearch/based-360m](https://huggingface.co/hazyresearch/based-360m)     |reference/based-360m.yaml |  |
 | **Based**        | 1.4b | 10b   |[02-21-based-1b](https://wandb.ai/hazy-research/based/runs/02-24-based-1b)     |[hazyresearch/based-1b](https://huggingface.co/hazyresearch/based-1b)      |reference/based-1b.yaml | |
