@@ -30,18 +30,6 @@ class SequenceModel(LightningModule):
         self.model_cfg = model_cfg or self.cfg.model
 
         self.instantiate_datamodule()
-        
-        # labels = []
-        # inputs = []
-        # for batch in self._datamodule.test_dataloader():
-        #     labels.append(batch[1])
-        #     inputs.append(batch[0])
-        # labels = torch.cat(labels, dim=0)
-        # inputs = torch.cat(inputs, dim=0)
-        # torch.save({"labels": labels, "inputs": inputs}, "/var/cr01_data/sabri/code/based/train/sanity_tokenizer.pt")
-        
-
-
         self.instantiate_model()
         self.warmstart()
         self.instantiate_loss()
@@ -57,12 +45,6 @@ class SequenceModel(LightningModule):
         OmegaConf.register_new_resolver('datamodule', lambda attr: getattr(self._datamodule, attr))
 
     def instantiate_model(self):
-        # if hasattr(self._datamodule, 'num_classes'):
-        #     self.model_cfg.num_classes = self._datamodule.num_classes
-        # if (hasattr(self._datamodule, 'vocab_size')
-        #     and self.model_cfg.get('embedding_cfg', None) is not None
-        #     and self.model_cfg.embedding_cfg._target_ == "torch.nn.Embedding"):
-        #     self.model_cfg.embedding_cfg.num_embeddings = self._datamodule.vocab_size
         logger.info(f"Instantiating model <{self.model_cfg._target_}>")
         recursive = getattr(self.model_cfg, '_recursive_', False)
         if getattr(self.model_cfg, "_instantiate_config_", True):

@@ -1,6 +1,7 @@
 _target_: train.datamodules.language_modeling_hf.LMDataModule
-dataset_name: EleutherAI/pile
-# dataset_config_name: 
+dataset_name: wikitext
+# EleutherAI/pile
+dataset_config_name: wikitext-103-v1
 tokenizer_name: gpt2
 cache_dir: ${oc.env:DATA_DIR,${data_dir}}/wikitext103/cache
 max_length: 2048

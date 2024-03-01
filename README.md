@@ -88,10 +88,23 @@ pip install -v --disable-pip-version-check --no-cache-dir --no-build-isolation -
 cd ..
 ```
 
-To train a new model, construct a config.yaml file at ```based/configs/experiment/```. We are including the configs used to produce the pretrained checkpoints for the paper (released on HF below) at ```based/configs/experiment/reference/```.
+To train a new model, construct a config.yaml file at ```train/configs/experiment/```. We are including the configs used to produce the pretrained checkpoints for the paper (released on HF below) at ```train/configs/experiment/reference/```.
 
-You can launch a training job using the following command from the ```based/based/``` directory, where you can modify the config name and number of GPUs (```trainer.devices```):
-```python run.py experiment=reference/based-1.3b trainer.devices=8```
+You can launch a training job using the following command from the ```train/``` directory, where you can modify the config name and number of GPUs (```trainer.devices```):
+```
+cd train/
+python run.py experiment=reference/based-1.3b trainer.devices=8
+```
+
+In our paper, we evaluated on the Pile corpus, which is no longer available online, so the ```train/configs/experiment/reference/``` configs are unfortunately not directly runnable. For your use, we are including example configs that would train on the [SlimPajama-627B dataset from Cerebras](https://huggingface.co/datasets/cerebras/SlimPajama-627B). You can launch using the following script:
+```
+cd train/
+python run.py experiment=example/based-360m trainer.devices=8
+```
+
+ You can adapt the training dataset by adding a new dataset config file under ```train/configs/datamodule/```. Follow the examples in ```wikitext103.yaml```. Once you've constructed the yaml file for your new dataset, go to the experiment config (e.g. ```train/configs/experiment/example/based-360m.yaml```) and update the name of the datamodule under ```override datamodule``` to the filename of your new dataset yaml file. 
+
+ Note that this training code is from: https://github.com/Dao-AILab/flash-attention/tree/main/training
 
 
 ## Evaluate
@@ -136,15 +149,50 @@ The code for reproducing these figures is provided in a separate repository: [Ha
 python -m zoology.launch zoology/experiments/arxiv24_based_figure2/configs.py -p
 ```
 
+
+## Benchmarking and Efficiency
+
+We include the kernels evaluated in the Based paper under ```based/benchmarking/```. We provide additional details on the CUDA releases in the README in this folder. Stay tuned!
+
+
 ## Citation and Acknowledgements
+
+This repo contains work based on the following papers. Please consider citing if you found the work or code useful:
 ```
+# Based
+@article{simple2024arora,
+  title={Simple linear attention language models balance the recall-throughput tradeoff},
+  author={Simran Arora, Sabri Eyuboglu, Michael Zhang, Aman Timalsina, Silas Alberti, Dylan Zinsley, James Zou, Atri Rudra, Christopher Ré},
+  journal={arXiv:2402.18668},
+  year={2024}
+}
+
+# Hedgehog
+@article{hedgehog2024zhang,
+  title={The Hedgehog & the Porcupine: Expressive Linear Attentions with Softmax Mimicry},
+  author={Michael Zhang, Kush Bhatia, Hermann Kumbong, Christopher Ré},
+  journal={	arXiv:2402.04347},
+  year={ICLR 2024}
+}
+
+# Zoology (Synthetics)
+@article{zoology2023arora,
+  title={Zoology: Measuring and Improving Recall in Efficient Language Models},
+  author={Arora, Simran and Eyuboglu, Sabri and Timalsina, Aman and Johnson, Isys and Poli, Michael and Zou, James and Rudra, Atri and Ré, Christopher},
+  journal={	arXiv:2312.04927},
+  year={2023}
+}
 ```
 
-
-This project was made possible by a number of other open source projects. Notably:
+This project was made possible by a number of other open source projects; please cite if you use their work. Notably:
 - Our training code and sliding window implementation are based on Tri Dao's [FlashAttention](https://github.com/Dao-AILab/flash-attention). 
 - We use EleutherAI's [lm-evaluation-harness](https://github.com/EleutherAI/lm-evaluation-harness) for evaluation. 
+- We use the causal dot product kernel from Fast Transformers in preliminary training [Fast Transformers](https://github.com/idiap/fast-transformers).
+
 
 Models in this project were trained using compute provided by:  
 - [Together.ai](https://www.together.ai/)
 - Google Cloud Platform through [Stanford HAI](https://hai.stanford.edu/call-google-cloud-credit-proposals)
+
+
+Please reach out with feedback and questions!
