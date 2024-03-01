@@ -188,6 +188,7 @@ This project was made possible by a number of other open source projects; please
 - Our training code and sliding window implementation are based on Tri Dao's [FlashAttention](https://github.com/Dao-AILab/flash-attention). 
 - We use EleutherAI's [lm-evaluation-harness](https://github.com/EleutherAI/lm-evaluation-harness) for evaluation. 
 - We use the causal dot product kernel from Fast Transformers in preliminary training [Fast Transformers](https://github.com/idiap/fast-transformers).
+- We use the conv1d kernel from [Mamba](https://github.com/state-spaces/mamba/tree/main).
 
 
 Models in this project were trained using compute provided by:  
