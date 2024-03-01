@@ -104,7 +104,7 @@ cd train/
 python run.py experiment=reference/based-1.3b trainer.devices=8
 ```
 
-In our paper, we evaluated on the Pile corpus, which is no longer available online, so the ```train/configs/experiment/reference/``` configs are unfortunately not directly runnable. For your use, we are including example configs that would train on the [SlimPajama-627B dataset from Cerebras](https://huggingface.co/datasets/cerebras/SlimPajama-627B). You can launch using the following script:
+In our paper, we evaluated on the Pile corpus, which is no longer available online, so the ```train/configs/experiment/reference/``` configs are unfortunately not directly runnable. For your use, we are including an example config that would train on the WikiText103 language modeling data. You can launch using the following script:
 ```
 cd train/
 python run.py experiment=example/based-360m trainer.devices=8
