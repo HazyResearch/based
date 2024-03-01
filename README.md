@@ -138,6 +138,14 @@ TODO: Update this.
 
 ## Citation and Acknowledgements
 ```
+@misc{arora2024simple,
+      title={Simple linear attention language models balance the recall-throughput tradeoff}, 
+      author={Simran Arora and Sabri Eyuboglu and Michael Zhang and Aman Timalsina and Silas Alberti and Dylan Zinsley and James Zou and Atri Rudra and Christopher Ré},
+      year={2024},
+      eprint={2402.18668},
+      archivePrefix={arXiv},
+      primaryClass={cs.CL}
+}
 ```
 
 
