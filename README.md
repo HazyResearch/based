@@ -11,7 +11,15 @@
 </div>
 
 
-Based is an efficient architecture that approximates attention with linear attention to model long-range dependencies in the sequence plus short (i.e. dimension 64) sliding window attention to model fine-grained local dependencies in the sequence. In this repo, we are including code to train new models and to eval existing checkpoints on downstream tasks.
+Based is an efficient architecture inspired by recovering attention-like capabilities (i.e., *recall*). We do so by combining 2 simple ideas:
+1. Short sliding window attention (e.g., window size 64), to model fine-grained local dependencies
+2. "Dense" and global *linear* attention, to model long-range dependencies
+
+In this way, we aim to capture the same dependencies as Transformers in a 100% subquadratic model, with *exact* softmax attention locally and a softmax-approximating linear attention for all other tokens. 
+
+We find this helps close many of the performance gaps between Transformers and recent subquadratic alternatives (matching perplexity is not all you need? [[1](https://arxiv.org/abs/2312.04927), [2](https://arxiv.org/abs/2402.01032), [3](https://arxiv.org/abs/2402.04248)]).
+
+In this repo, please find code to (1) train new models and (2) evaluate existing checkpoints on downstream tasks.
 
 ## Installation
 
@@ -63,7 +71,7 @@ output = model.generate(input, max_length=20)
 print(tokenizer.decode(output[0]))
 ```
 
-**Note.** for the checkpoints from other models, you will need to install other dependencies. 
+**Note.** For the checkpoints from other models, you will need to install other dependencies. 
 
 To use the Transformer and Mamba checkpoints, you will need the following installations:
 ```bash
@@ -108,7 +116,7 @@ python run.py experiment=example/based-360m trainer.devices=8
 
 
 ## Evaluate
-In our paper, we evaluate pretrained language models on standard suite of benchmarks from the LM Evaluation Harness as well as a new suite of three *recall-intensive* tasks:
+In our paper, we evaluate pretrained language models on a standard suite of benchmarks from the LM Evaluation Harness, as well as a new suite of three *recall-intensive* tasks:
 
 - **SWDE** (Info. extraction). A popular information extraction benchmark for semi-structured data. SWDE includes raw HTML docuemtns from 8 Movie and 5 University websites (e.g.IMDB, US News) and annotations for 8-274 attributes per website (e.g., Movie runtime). **HuggingFace: [hazyresearch/based-swde](https://huggingface.co/datasets/hazyresearch/based-swde)**
 - **FDA** (Info. extraction). A popular information extraction benchmark for unstructured data. The FDA setting contains 16 gold attributes and 100 PDF documents, which are up to 20 pages long, randomly sampled from FDA 510(k). **HuggingFace: [hazyresearch/based-fda](https://huggingface.co/datasets/hazyresearch/based-swde)**
