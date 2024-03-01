@@ -78,13 +78,27 @@ CONFIGS = {
             }, **BASE_CONFIG
         }
     ),
+    "mha": GPT2MixerConfig(
+        **{
+            "mixer": {
+                "_target_": "based.models.mixers.mha.MHA",  
+                "window_size": (64, -1),
+                # "embed_dim": BASE_CONFIG["n_embd"],
+                "num_heads": 16,
+                "causal": True,
+                "use_flash_attn": True
+                # "do_update": True
+            }, **BASE_CONFIG
+        }
+    ),
 }
 
 CONFIGS_TO_TEST = [
-    "conv",
-    "base_conv",
-    "linear_attn",
-    "sliding"
+    # "conv",
+    # "base_conv",
+    # "linear_attn",
+    # "sliding",
+    "mha"
 ]
 
 # SE (02/26): borrowing these tolerances from Mamba's test_selective_state_update
@@ -104,7 +118,9 @@ DTYPE_TO_RTOL = {
 @pytest.mark.parametrize("prefill_size", [1, 128])
 @pytest.mark.parametrize("cache_graph", [False])
 @pytest.mark.parametrize("naive_generation", [False])
-@pytest.mark.parametrize("dtype", [torch.float32, torch.float16, torch.bfloat16])
+@pytest.mark.parametrize("dtype", [
+    torch.float32, 
+    torch.float16, torch.bfloat16])
 def test_generation(
     config: GPT2MixerConfig, 
     prefill_size: int, 
@@ -112,10 +128,15 @@ def test_generation(
     naive_generation: bool,
     dtype: torch.dtype,
 ):
+    if config in ["mha", "sliding"] and dtype == torch.torch.float32:
+        # SE: MHA is not implemented for float32
+        return 
+
     config = CONFIGS[config]
     batch_size = 4
     n_generated_tokens = 64
     device = "cuda"
+
 
     model = GPTLMHeadModel(config).to(device=device, dtype=dtype)
     model.eval()

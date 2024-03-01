@@ -43,11 +43,12 @@ We are releasing the following checkpoints for research, trained at the 360M and
 
 Use the code below to load any of the checkpoints:
 ```python  
+import torch
 from transformers import AutoTokenizer
 from based.models.gpt import GPTLMHeadModel
 
 tokenizer = AutoTokenizer.from_pretrained("gpt2")
-model = GPTLMHeadModel.from_pretrained_hf("hazyresearch/based-360m").to("cuda")
+model = GPTLMHeadModel.from_pretrained_hf("hazyresearch/based-360m").to("cuda", dtype=torch.float16)
 ```
 
 
@@ -71,15 +72,28 @@ output = model.generate(input, max_length=20)
 print(tokenizer.decode(output[0]))
 ```
 
-**Note.** For the checkpoints from other models, you will need to install other dependencies. 
+**Note.** For the checkpoints from other models, you will need to install other dependencies and use slightly different code. 
 
-To use the Transformer and Mamba checkpoints, you will need the following installations:
-```bash
-# transformer
-pip install flash_attn
+To load the Attention models, use the following code:
 
-# mamba
-pip install mamba-ssm
+```python  
+import torch
+from transformers import AutoTokenizer
+from based.models.transformer.gpt import GPTLMHeadModel
+
+tokenizer = AutoTokenizer.from_pretrained("gpt2")
+model = GPTLMHeadModel.from_pretrained_hf("hazyresearch/attn-360m").to("cuda")
+```
+
+To use the Mamba checkpoints, first run `pip install mamba-ssm` and then use the following code:
+
+```python  
+import torch
+from transformers import AutoTokenizer
+from based.models.mamba import MambaLMHeadModel
+
+tokenizer = AutoTokenizer.from_pretrained("gpt2")
+model = MambaLMHeadModel.from_pretrained_hf("hazyresearch/mamba-360m").to("cuda")
 ```
 
 
