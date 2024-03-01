@@ -94,6 +94,10 @@ git clone https://github.com/NVIDIA/apex
 cd apex
 pip install -v --disable-pip-version-check --no-cache-dir --no-build-isolation --config-settings "--build-option=--cpp_ext" --config-settings "--build-option=--cuda_ext" ./
 cd ..
+
+# install kernel (to be replced with new custom kernels)
+cd train/csrc/
+python setup.py install
 ```
 
 To train a new model, construct a config.yaml file at ```train/configs/experiment/```. We are including the configs used to produce the pretrained checkpoints for the paper (released on HF below) at ```train/configs/experiment/reference/```.
