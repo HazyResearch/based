@@ -3,9 +3,12 @@
 
 **Simple linear attention language models balance the recall-throughput tradeoff.**
 
+[![arXiv](https://img.shields.io/badge/arXiv-2402.18668-b31b1b.svg)](https://arxiv.org/abs/2402.18668)
 [![GitHub](https://img.shields.io/github/license/HazyResearch/meerkat)](https://img.shields.io/github/license/HazyResearch/meerkat)
-[![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/pre-commit/pre-commit)
-
+[![Paper page](https://huggingface.co/datasets/huggingface/badges/resolve/main/paper-page-sm.svg)](https://huggingface.co/collections/hazyresearch/based-65d77fb76f9c813c8b94339c)
+<!-- [![Dataset on HF](https://huggingface.co/datasets/huggingface/badges/resolve/main/dataset-on-hf-sm-dark.svg)](https://huggingface.co/datasets) -->
+<!-- [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/pre-commit/pre-commit) -->
+<!-- [![Model on HF](https://huggingface.co/datasets/huggingface/badges/resolve/main/model-on-hf-sm-dark.svg)](https://huggingface.co/models) -->
 
 
 </div>
@@ -17,7 +20,7 @@ Based is an efficient architecture inspired by recovering attention-like capabil
 
 In this way, we aim to capture the same dependencies as Transformers in a 100% subquadratic model, with *exact* softmax attention locally and a softmax-approximating linear attention for all other tokens. 
 
-We find this helps close many of the performance gaps between Transformers and recent subquadratic alternatives (matching perplexity is not all you need? [[1](https://arxiv.org/abs/2312.04927), [2](https://arxiv.org/abs/2402.01032), [3](https://arxiv.org/abs/2402.04248)]).
+We find this helps close many of the performance gaps between Transformers and recent subquadratic alternatives (matching perplexity is not all you need? [[1](https://arxiv.org/abs/2312.04927), [2](https://arxiv.org/abs/2402.01032), [3](https://arxiv.org/abs/2402.04248)).
 
 In this repo, please find code to (1) train new models and (2) evaluate existing checkpoints on downstream tasks.
 
@@ -41,7 +44,7 @@ pip install -e .
 
 We are releasing the following checkpoints for research, trained at the 360M and 1.3Bn parameter scales. Each checkpoint is trained on the same 10Bn tokens of the Pile corpus, using the same data order. The checkpoints are trained using the same code and infrastructure.  
 
-Use the code below to load any of the checkpoints:
+Use the code below to load the Based checkpoints:
 ```python  
 import torch
 from transformers import AutoTokenizer
@@ -144,7 +147,6 @@ Under `evaluate`, we have a clone of EleutherAI's [lm-evaluation-harness](https:
 
 
 ### Setup.
-TODO: Update this. 
 ```bash
 cd evaluate 
 
@@ -155,12 +157,20 @@ pip install -e .
 ```
 
 
-### Evaluations.
+### Running Evaluations.
+We provide a script `evaluate/launch.py` that launch evaluations on the checkpoints we've released. 
+
+For example, running the following from the `evaluate` folder will evaluate the 360M Based, Mamba, and Attention models on the SWDE dataset.
 
 ```
-cd evals/
-bash run_harness.sh
+python launch.py \
+    --task swde  \
+    --model "hazyresearch/based-360m" \
+    --model "hazyresearch/mamba-360m" \
+    --model "hazyresearch/attn-360m" \
+    --limit=100
 ```
+Optionally, if you have access to multiple GPUs, you can pass the `-p` flag to run each evaluation in parallel. 
 
 
 ## Experiments on Synthetic Data
