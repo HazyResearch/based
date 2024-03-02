@@ -1,3 +1,12 @@
 [submodule "evals/lm-evaluation-harness"]
 	path = evals/lm-evaluation-harness
 	url = https://github.com/EleutherAI/lm-evaluation-harness.git
+[submodule "synthetic"]
+	path = synthetic
+	url = https://github.com/HazyResearch/zoology.git
+[submodule "evaluate"]
+	path = evaluate
+	url = https://github.com/HazyResearch/based-evaluation-harness
+[submodule "based/models/flash-attention"]
+	path = based/models/flash-attention
+	url = https://github.com/Dao-AILab/flash-attention.git

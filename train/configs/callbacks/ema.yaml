@@ -1,0 +1,4 @@
+ema:
+  _target_: train.callbacks.ema.EMACallback
+  decay: ???
+  use_num_updates: False

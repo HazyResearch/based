@@ -1,0 +1,9 @@
+defaults:
+  - _self_
+  - gpt2model: gpt2-small
+
+_target_: based.models.gla.GLAForCausalLM
+_recursive_: True
+config:
+  _target_: based.models.gla.GLAConfig
+  context_length: ${datamodule.max_length}
