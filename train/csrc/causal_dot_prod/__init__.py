@@ -4,7 +4,7 @@
 # Apoorv Vyas <avyas@idiap.ch>
 #
 from .causal_attention import causal_dot_product
-from .causal_attention_bf16 import causal_dot_product as causal_dot_product_bf16
+# from .causal_attention_bf16 import causal_dot_product as causal_dot_product_bf16
 
 
 # import torch

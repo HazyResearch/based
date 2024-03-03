@@ -11,7 +11,8 @@ from based.generation import InferenceParams
 
 
 try:
-    from csrc import causal_dot_product  # linear attention cuda kernel
+    
+    import train.csrc.causal_dot_prod as causal_dot_product  # linear attention cuda kernel
 except:
     print(f"Could not import the causal dot product kernel... ")
     causal_dot_product = None
