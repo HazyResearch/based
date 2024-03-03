@@ -1,0 +1,6 @@
+defaults:
+  - _self_
+  - gpt2model: gpt2-small
+
+_target_: based.models.h3.SSMLMHeadModel
+

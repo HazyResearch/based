@@ -49,12 +49,12 @@ try:
 except ImportError:
     dropout_add_layer_norm_parallel_residual = None
 
-# try:
-#     from flash_attn.ops.rms_norm import RMSNorm, dropout_add_rms_norm
-# except ImportError:
-#     RMSNorm, dropout_add_rms_norm = None, None
+try:
+    from flash_attn.ops.rms_norm import RMSNorm, dropout_add_rms_norm
+except ImportError:
+    RMSNorm, dropout_add_rms_norm = None, None
     
-from based.ops.triton.layer_norm import RMSNorm
+# from based.ops.triton.layer_norm import RMSNorm
 
 try:
     from flash_attn.ops.rms_norm import dropout_add_rms_norm_parallel_residual
@@ -89,13 +89,11 @@ def create_mixer_cls(config, layer_idx=None, process_group=None, device=None, dt
     if alt_mixer_2_layers is not None and layer_idx in alt_mixer_2_layers:
         value = None
         if alt_mixer_2 is not None:
-            print(f"Alternate Mixer 2 @ Layer {layer_idx}")
             tag = 'alt_mixer_2'
             value = config.alt_mixer_2
     elif alt_mixer_layers is not None and layer_idx in alt_mixer_layers:
         value = None
         if alt_mixer is not None:
-            print(f"Alternate Mixer @ Layer {layer_idx}")
             tag = 'alt_mixer'
             value = config.alt_mixer
     if (not hasattr(config, tag)) or value is None:

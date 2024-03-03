@@ -150,7 +150,6 @@ class FlashCrossAttention(nn.Module):
         self.softmax_scale = softmax_scale
         self.drop = nn.Dropout(attention_dropout)
         self.window_size = window_size
-        print(f"Window size: {window_size}; is None: {window_size is None}")
 
     def forward(
         self,
@@ -365,7 +364,6 @@ class SlidingsMHA(nn.Module):
                 interleaved=rotary_emb_interleaved,
                 device=device,
             )
-            print(f"Using rotary...")
 
         if fused_bias_fc and FusedDense is None: raise ImportError("fused_dense is not installed")
         linear_cls = nn.Linear if not fused_bias_fc else FusedDense

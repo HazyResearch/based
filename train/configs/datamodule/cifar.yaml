@@ -1,0 +1,12 @@
+_name_: cifar
+permute: null
+grayscale: False
+tokenize: False
+augment: False
+cutout: False
+random_erasing: False
+val_split: 0.1
+seed: 42 # For validation split
+__train_len: 50000
+__max_len: 1024
+num_classes: 10
