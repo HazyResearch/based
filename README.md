@@ -124,7 +124,7 @@ To train a new model, construct a config.yaml file at ```train/configs/experimen
 You can launch a training job using the following command from the ```train/``` directory, where you can modify the config name and number of GPUs (```trainer.devices```):
 ```
 cd train/
-python run.py experiment=reference/based-1.3b trainer.devices=8
+python run.py experiment=reference/based-1b trainer.devices=8
 ```
 
 In our paper, we evaluated on the Pile corpus, which is no longer available online, so the ```train/configs/experiment/reference/``` configs are unfortunately not directly runnable. For your use, we are including an example config that would train on the WikiText103 language modeling data. You can launch using the following script:

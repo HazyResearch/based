@@ -2,23 +2,19 @@
 Linear attention in Based. 
 """
 import math
-import hydra
+
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
-import opt_einsum as oe
 from einops import rearrange
-from typing import Optional, Tuple
-import numpy as np
-
-from transformers.models.llama.modeling_llama import apply_rotary_pos_emb, repeat_kv, LlamaRotaryEmbedding
 
 from based.generation import InferenceParams
 
+
 try:
-    from flash_attn.layers.rotary import RotaryEmbedding
-except ImportError:
-    RotaryEmbedding = None
+    from csrc import causal_dot_product  # linear attention cuda kernel
+except:
+    print(f"Could not import the causal dot product kernel... ")
+    causal_dot_product = None
 
         
 class FeatureMap(nn.Module):
@@ -71,6 +67,7 @@ class LinearAttention(nn.Module):
         num_heads: int = 16,
         eps: float = 1e-12,
         layer_idx: int = None,
+        parallel_implementation: str="quadratic",
         **kwargs
     ):
         super().__init__()
@@ -79,6 +76,7 @@ class LinearAttention(nn.Module):
         self.d_model = d_model
         self.l_max = l_max
         self.eps = eps
+        self.parallel_implementation = parallel_implementation
 
         # set dimension 
         self.num_heads = num_heads
@@ -132,12 +130,26 @@ class LinearAttention(nn.Module):
                 return y
 
     def parallel_forward(self, x: torch.Tensor, q: torch.Tensor, k: torch.Tensor, v: torch.Tensor):
-        A_qk = torch.einsum("bhnd,bhmd->bhnm", q, k) 
-        A_qk = torch.tril(A_qk)        
-        y = torch.einsum("bhnm,bhme->bhne", A_qk.to(x.dtype), v.to(x.dtype))
-        z = 1 / (torch.einsum("bhld,bhld->bhl", q, k.cumsum(2)) + self.eps)
-        y = y * z[..., None]
-        y = rearrange(y, 'b h l d -> b l (h d)')
+        if self.parallel_implementation == "quadratic":
+            A_qk = torch.einsum("bhnd,bhmd->bhnm", q, k) 
+            A_qk = torch.tril(A_qk)        
+            y = torch.einsum("bhnm,bhme->bhne", A_qk.to(x.dtype), v.to(x.dtype))
+            z = 1 / (torch.einsum("bhld,bhld->bhl", q, k.cumsum(2)) + self.eps)
+            y = y * z[..., None]
+            y = rearrange(y, 'b h l d -> b l (h d)')
+        elif self.parallel_implementation == "linear": 
+            v = causal_dot_product(q.contiguous().to(dtype=torch.float32), k.contiguous().to(dtype=torch.float32),v.contiguous().to(dtype=torch.float32),)
+            z = 1 / (
+                torch.einsum(
+                    "bhld,bhld->bhl", 
+                    q.to(dtype=torch.float32), 
+                    k.to(dtype=torch.float32).cumsum(2)
+                ) + self.eps
+            )
+            y = v * z[..., None]
+        else: 
+            raise ValueError(f"Parallel implementation {self.parallel_implementation} not supported")
+
         return self.out_proj(y.to(x.dtype))
 
     
@@ -151,14 +163,12 @@ class LinearAttention(nn.Module):
         # Expand dims for broadcasting to compute linear attention
         q, k, v = q.unsqueeze(-2), k.unsqueeze(-2), v.unsqueeze(-1)
 
-
         kv_state += k[:, :, -1:] * v[:, :, -1:]
         k_state  += k[:, :, -1:]
 
         # Compute linear attention
         num = (q * kv_state).sum(dim=-1)
         y = num / ((q * k_state).sum(dim=-1) + self.eps)
-
 
         y = rearrange(y, 'b h l d -> b l (h d)').to(q.dtype)
         return self.out_proj(y)
