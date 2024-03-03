@@ -206,12 +206,12 @@ This repo contains work based on the following papers. Please consider citing if
   year={2024}
 }
 
-# Hedgehog
-@article{hedgehog2024zhang,
-  title={The Hedgehog & the Porcupine: Expressive Linear Attentions with Softmax Mimicry},
-  author={Michael Zhang, Kush Bhatia, Hermann Kumbong, Christopher Ré},
-  journal={	arXiv:2402.04347},
-  year={ICLR 2024}
+# Hedgehog (Linear attention)
+@article{zhang2024hedgehog,
+  title={The Hedgehog \& the Porcupine: Expressive Linear Attentions with Softmax Mimicry},
+  author={Zhang, Michael and Bhatia, Kush and Kumbong, Hermann and R{\'e}, Christopher},
+  journal={arXiv preprint arXiv:2402.04347},
+  year={2024}
 }
 
 # Zoology (BaseConv, Synthetics, Recall Problem)
