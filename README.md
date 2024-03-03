@@ -114,7 +114,7 @@ pip install -v --disable-pip-version-check --no-cache-dir --no-build-isolation -
 cd ..
 
 # install kernel (to be replced with new custom kernels)
-cd train/csrc/
+cd train/csrc/causal_dot_prod/
 python setup.py install
 ```
 
@@ -204,12 +204,12 @@ This repo contains work based on the following papers. Please consider citing if
   year={2024}
 }
 
-# Hedgehog
-@article{hedgehog2024zhang,
-  title={The Hedgehog & the Porcupine: Expressive Linear Attentions with Softmax Mimicry},
-  author={Michael Zhang, Kush Bhatia, Hermann Kumbong, Christopher Ré},
-  journal={	arXiv:2402.04347},
-  year={ICLR 2024}
+# Hedgehog (Linear attention)
+@article{zhang2024hedgehog,
+  title={The Hedgehog \& the Porcupine: Expressive Linear Attentions with Softmax Mimicry},
+  author={Zhang, Michael and Bhatia, Kush and Kumbong, Hermann and R{\'e}, Christopher},
+  journal={arXiv preprint arXiv:2402.04347},
+  year={2024}
 }
 
 # Zoology (Synthetics and Recall Problem)
