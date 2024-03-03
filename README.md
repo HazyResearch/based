@@ -102,7 +102,8 @@ model = MambaLMHeadModel.from_pretrained_hf("hazyresearch/mamba-360m").to("cuda"
 
 
 ## Train
-In order to train a new model with our code, you'll need to do a bit more setup: 
+In order to train a new model with our code, you'll need to do a bit of additional setup: 
+
 ```python
 # install train extra dependencies
 pip install -e .[train]
