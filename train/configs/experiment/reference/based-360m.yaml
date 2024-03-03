@@ -79,6 +79,7 @@ model:
         input_dim: ${..feature_dim}
       feature_dim: 16
       num_heads: 16
+      parallel_implementation: "linear"
 
     alt_mixer_2:
       _target_: based.models.mixers.slide_attention.SlidingAttention
