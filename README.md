@@ -133,7 +133,9 @@ cd train/
 python run.py experiment=example/based-360m trainer.devices=8
 ```
 
- You can adapt the training dataset by adding a new dataset config file under ```train/configs/datamodule/```. Follow the examples in ```wikitext103.yaml```. Once you've constructed the yaml file for your new dataset, go to the experiment config (e.g. ```train/configs/experiment/example/based-360m.yaml```) and update the name of the datamodule under ```override datamodule``` to the filename of your new dataset yaml file. 
+You can adapt the training dataset by adding a new dataset config file under ```train/configs/datamodule/```. Follow the examples in ```wikitext103.yaml```. Once you've constructed the yaml file for your new dataset, go to the experiment config (e.g. ```train/configs/experiment/example/based-360m.yaml```) and update the name of the datamodule under ```override datamodule``` to the filename of your new dataset yaml file. 
+
+Be sure to update the checkpointing directory (in the config)[https://github.com/HazyResearch/based/blob/3fb009b8216b41d14ea3a2ab9552a5c609ef0bf4/train/configs/experiment/example/based-360m.yaml#L39] prior to launching training.
 
  Note that this training code is from: https://github.com/Dao-AILab/flash-attention/tree/main/training
 
@@ -198,9 +200,9 @@ We include the kernels evaluated in the Based paper under ```based/benchmarking/
 This repo contains work based on the following papers. Please consider citing if you found the work or code useful:
 ```
 # Based
-@article{simple2024arora,
+@article{arora2024simple,
   title={Simple linear attention language models balance the recall-throughput tradeoff},
-  author={Simran Arora, Sabri Eyuboglu, Michael Zhang, Aman Timalsina, Silas Alberti, Dylan Zinsley, James Zou, Atri Rudra, Christopher Ré},
+  author={Arora, Simran and Eyuboglu, Sabri and Zhang, Michael and Timalsina, Aman and Alberti, Silas and Zinsley, Dylan and Zou, James and Rudra, Atri and Ré, Christopher},
   journal={arXiv:2402.18668},
   year={2024}
 }
@@ -213,11 +215,11 @@ This repo contains work based on the following papers. Please consider citing if
   year={2024}
 }
 
-# Zoology (Synthetics and Recall Problem)
-@article{zoology2023arora,
+# Zoology (BaseConv, Synthetics, Recall Problem)
+@article{arora2023zoology,
   title={Zoology: Measuring and Improving Recall in Efficient Language Models},
   author={Arora, Simran and Eyuboglu, Sabri and Timalsina, Aman and Johnson, Isys and Poli, Michael and Zou, James and Rudra, Atri and Ré, Christopher},
-  journal={	arXiv:2312.04927},
+  journal={arXiv:2312.04927},
   year={2023}
 }
 ```
