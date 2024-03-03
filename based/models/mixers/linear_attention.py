@@ -12,7 +12,7 @@ from based.generation import InferenceParams
 
 try:
     
-    import train.csrc.causal_dot_prod as causal_dot_product  # linear attention cuda kernel
+    from train.csrc.causal_dot_prod import causal_dot_product  # linear attention cuda kernel
 except:
     print(f"Could not import the causal dot product kernel... ")
     causal_dot_product = None
@@ -148,6 +148,7 @@ class LinearAttention(nn.Module):
                 ) + self.eps
             )
             y = v * z[..., None]
+            y = rearrange(y, 'b h l d -> b l (h d)')
         else: 
             raise ValueError(f"Parallel implementation {self.parallel_implementation} not supported")
 
