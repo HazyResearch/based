@@ -135,7 +135,7 @@ python run.py experiment=example/based-360m trainer.devices=8
 
 You can adapt the training dataset by adding a new dataset config file under ```train/configs/datamodule/```. Follow the examples in ```wikitext103.yaml```. Once you've constructed the yaml file for your new dataset, go to the experiment config (e.g. ```train/configs/experiment/example/based-360m.yaml```) and update the name of the datamodule under ```override datamodule``` to the filename of your new dataset yaml file. 
 
-Be sure to update the checkpointing directory (in the config)[https://github.com/HazyResearch/based/blob/3fb009b8216b41d14ea3a2ab9552a5c609ef0bf4/train/configs/experiment/example/based-360m.yaml#L39] prior to launching training.
+Be sure to update the checkpointing directory [in the config](https://github.com/HazyResearch/based/blob/3fb009b8216b41d14ea3a2ab9552a5c609ef0bf4/train/configs/experiment/example/based-360m.yaml#L39) prior to launching training.
 
  Note that this training code is from: https://github.com/Dao-AILab/flash-attention/tree/main/training
 
