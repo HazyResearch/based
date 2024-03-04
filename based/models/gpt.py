@@ -53,6 +53,8 @@ try:
     from flash_attn.ops.rms_norm import RMSNorm, dropout_add_rms_norm
 except ImportError:
     RMSNorm, dropout_add_rms_norm = None, None
+    
+# from based.ops.triton.layer_norm import RMSNorm
 
 try:
     from flash_attn.ops.rms_norm import dropout_add_rms_norm_parallel_residual
@@ -87,13 +89,11 @@ def create_mixer_cls(config, layer_idx=None, process_group=None, device=None, dt
     if alt_mixer_2_layers is not None and layer_idx in alt_mixer_2_layers:
         value = None
         if alt_mixer_2 is not None:
-            print(f"Alternate Mixer 2 @ Layer {layer_idx}")
             tag = 'alt_mixer_2'
             value = config.alt_mixer_2
     elif alt_mixer_layers is not None and layer_idx in alt_mixer_layers:
         value = None
         if alt_mixer is not None:
-            print(f"Alternate Mixer @ Layer {layer_idx}")
             tag = 'alt_mixer'
             value = config.alt_mixer
     if (not hasattr(config, tag)) or value is None:
@@ -462,12 +462,19 @@ class GPTPreTrainedModel(nn.Module):
         return model
         
     @classmethod
-    def from_pretrained_hf(cls, pretrained_model_name, device=None, dtype=None, **kwargs):
+    def from_pretrained_hf(cls, pretrained_model_name, device=None, **kwargs):
         config_data = load_config_hf(pretrained_model_name)
         config = GPT2Config(**config_data)
-        model = cls(config, device=device, dtype=dtype, **kwargs)
-        model.load_state_dict(load_state_dict_hf(pretrained_model_name, device=device, dtype=dtype))
-        return model
+        model = cls(config, device=device, **kwargs)
+        state_dict = load_state_dict_hf(pretrained_model_name, device=device)
+
+        # remove the 'model.' prefix from the keys
+        state_dict = {re.sub("^model\.", "", k): v for k, v in state_dict.items()}
+        # remove Unexpected key(s) in state_dict: "train_metrics.num-tokens.count", "val_metrics.num-tokens.count", "test_metrics.num-tokens.count". from the state_dict
+        state_dict = {k: v for k, v in state_dict.items() if "metrics" not in k}
+
+        model.load_state_dict(state_dict)
+        return model.to(device=device)
 
 
 # https://github.com/huggingface/transformers/blob/c28d04e9e252a1a099944e325685f14d242ecdcd/src/transformers/models/gpt2/modeling_gpt2.py#L454
@@ -768,7 +775,6 @@ class GPTLMHeadModel(GPTPreTrainedModel, GenerationMixin, NaiveGenerationMixin):
         )
         self.tie_weights()
         
-
     def tie_weights(self):
         if self.tie_word_embeddings:
             # print(f"Tying Weights")
@@ -807,7 +813,7 @@ class GPTLMHeadModel(GPTPreTrainedModel, GenerationMixin, NaiveGenerationMixin):
             hidden_states = self.project_out(hidden_states)
         lm_logits = self.lm_head(hidden_states)
         # During inference, we want the full logit for sampling
-        if isinstance(self.lm_head, ColumnParallelLinear) and inference_params is not None:
+        if ColumnParallelLinear is not None and isinstance(self.lm_head, ColumnParallelLinear) and inference_params is not None:
             lm_logits, _ = all_gather_raw(lm_logits, self.lm_head.process_group)
             lm_logits = rearrange(lm_logits, "(n b) ... d -> b ... (n d)", b=b)
         CausalLMOutput = namedtuple("CausalLMOutput", ["logits"])
