@@ -21,7 +21,7 @@ Based is an efficient architecture inspired by recovering attention-like capabil
 
 In this way, we aim to capture the same dependencies as Transformers in a 100% subquadratic model, with *exact* softmax attention locally and a softmax-approximating linear attention for all other tokens. 
 
-We find this helps close many of the performance gaps between Transformers and recent subquadratic alternatives (matching perplexity is not all you need? [[1](https://arxiv.org/abs/2312.04927), [2](https://arxiv.org/abs/2402.01032), [3](https://arxiv.org/abs/2402.04248)).
+We find this helps close many of the performance gaps between Transformers and recent subquadratic alternatives (matching perplexity is not all you need? [[1](https://arxiv.org/abs/2312.04927), [2](https://arxiv.org/abs/2402.01032), [3](https://arxiv.org/abs/2402.04248)]).
 
 In this repo, please find code to (1) train new models and (2) evaluate existing checkpoints on downstream tasks.
 
