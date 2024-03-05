@@ -1,0 +1,13 @@
+# defaults:
+#   - base
+#   - override layer: transformer
+
+_target_: based.models.transformer.TransformerClassifier
+d_model: ???
+activation: gelu
+norm_first: True
+batch_first: True
+pooling_mode: CLS
+
+# transposed: true # Actually faster than "true"
+# tie_dropout: true

@@ -1,0 +1,4 @@
+# @package eval.metrics
+acctop5:
+  _target_: train.metrics.accuracy.AccuracyMine
+  top_k: 5
