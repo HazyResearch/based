@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 
 
@@ -55,7 +55,7 @@ _OPTIONAL = {
 setup(
     name='based',
     version="0.0.1",
-    packages=['based'],
+    packages=find_packages(include=['based', 'based.*']),
     author="Based",
     author_email="",
     description="",
