@@ -180,10 +180,10 @@ To run a 100 samples for each task, use the `--limit=100` option.
 
 Below we include the results produced from running the command above. Note: the results below are on the new models trained and evaluated with the cleaned-up code in this repository. As a result, the results reported in our paper differ slightly.  
 | *Architecture* | *Size* | *SWDE*| *FDA* | *SQUAD* |
-| ---            | ---    | ---   | ---   | --- |
-| **Based**      | 360m   |26.61  |14.34  |24.23   |
-| **Mamba**      | 360m   |21.68  |5.90   | |
-| **Attention**  | 360m   |       |57.89  | |
+| ---            | ---    | ---   | ---   | ---     |
+| **Based**      | 360m   |26.61  |14.34  |24.23    |
+| **Mamba**      | 360m   |21.68  |5.90   |24.83    |
+| **Attention**  | 360m   |       |57.89  |         |
 
 
 ## Experiments on Synthetic Data
