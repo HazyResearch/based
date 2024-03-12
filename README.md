@@ -178,7 +178,7 @@ python launch.py \
 Optionally, if you have access to multiple GPUs, you can pass the `-p` flag to run each evaluation in parallel. 
 To run a 100 samples for each task, use the `--limit=100` option.
 
-Below we include the results. Note: the results differ slightly 
+Below we include the results produced from running the command above. Note: the results below are on the new models trained and evaluated with the cleaned-up code in this repository. As a result, the results reported in our paper differ slightly.  
 | *Architecture* | *Size* | *SWDE*| *FDA* | *SQUAD* |
 | ---            | ---    | ---   | ---   | --- |
 | **Based**      | 360m   |26.61  |14.34  |24.23   |
