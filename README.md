@@ -177,6 +177,19 @@ python launch.py \
 Optionally, if you have access to multiple GPUs, you can pass the `-p` flag to run each evaluation in parallel. 
 
 
+| *Architecture* | *Size* | *SWDE*| *FDA* | *SQUAD* |
+| ---            | ---    | ---   | ---   | --- |
+| **Based**      | 360m   |       |14.34  | |
+| **Mamba**      | 360m   |       |5.90   | |
+| **Attention**  | 360m   |       |57.89  | |
+
+| **Based**        | 1.4b |    | | |
+| **Mamba**        | 1.4b |    | | |
+| **Attention**    | 1b |    | | |
+
+
+
+
 ## Experiments on Synthetic Data
 In our paper, we demonstrate the recall-throughput tradeoff using a synthetic associative recall task (see Figure 2, below, and Figure 3 in the paper). 
 <div align="center" >
