@@ -174,7 +174,7 @@ python launch.py \
     --model "hazyresearch/attn-360m" \
     --limit=100
 ```
-Optionally, if you have access to multiple GPUs, you can pass the `-p` flag to run each evaluation in parallel. 
+Optionally, if you have access to multiple GPUs, you can pass the `-p` flag to run the evaluations in parallel. 
 
 
 ## Experiments on Synthetic Data
