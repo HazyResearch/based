@@ -183,7 +183,7 @@ Below we include the results produced from running the command above. Note: the 
 | ---            | ---    | ---   | ---   | ---     |
 | **Based**      | 360m   |26.61  |14.34  |24.23    |
 | **Mamba**      | 360m   |21.68  |5.90   |24.83    |
-| **Attention**  | 360m   |       |57.89  |27.85    |
+| **Attention**  | 360m   |26.18  |57.89  |27.85    |
 
 
 ## Experiments on Synthetic Data
