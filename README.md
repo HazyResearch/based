@@ -169,25 +169,21 @@ For example, running the following from the `evaluate` folder will evaluate the 
 ```bash
 python launch.py \
     --task swde  \
+    --task fda \
+    --task squad_completion \
     --model "hazyresearch/based-360m" \
     --model "hazyresearch/mamba-360m" \
-    --model "hazyresearch/attn-360m" \
-    --limit=100
+    --model "hazyresearch/attn-360m" 
 ```
 Optionally, if you have access to multiple GPUs, you can pass the `-p` flag to run each evaluation in parallel. 
+To run a 100 samples for each task, use the `--limit=100` option.
 
-
+Below we include the results. Note: the results differ slightly 
 | *Architecture* | *Size* | *SWDE*| *FDA* | *SQUAD* |
 | ---            | ---    | ---   | ---   | --- |
-| **Based**      | 360m   |       |14.34  | |
-| **Mamba**      | 360m   |       |5.90   | |
+| **Based**      | 360m   |26.61  |14.34  |24.23   |
+| **Mamba**      | 360m   |21.68  |5.90   | |
 | **Attention**  | 360m   |       |57.89  | |
-
-| **Based**        | 1.4b |    | | |
-| **Mamba**        | 1.4b |    | | |
-| **Attention**    | 1b |    | | |
-
-
 
 
 ## Experiments on Synthetic Data
