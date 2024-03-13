@@ -169,15 +169,14 @@ def create_mlp_cls(config, layer_idx=None, process_group=None, device=None, dtyp
                 else {}
             )
 
-            # SE (02-18): Need to replace this with 256, 
-            # mlp_multiple_of = getattr(config, "mlp_multiple_of", 128)
+            mlp_multiple_of = getattr(config, "mlp_multiple_of", 128)
             mlp_cls = partial(
                 mlp_cls,
                 hidden_features=config.n_inner,
                 activation=activation,
                 bias1=mlp_fc1_bias,
                 bias2=mlp_fc2_bias,
-                multiple_of=256,
+                multiple_of=mlp_multiple_of,
                 **parallel_kwargs,
                 **factory_kwargs,
             )
@@ -327,8 +326,6 @@ class GPTPreTrainedModel(nn.Module):
             )
         self.config = config
 
-    
-            
     @classmethod
     def from_pretrained_hf(cls, pretrained_model_name, device=None, **kwargs):
         from based.utils.hf import load_config_hf
