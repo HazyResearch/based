@@ -144,7 +144,7 @@ Be sure to update the checkpointing directory [in the config](https://github.com
 In our paper, we evaluate pretrained language models on a standard suite of benchmarks from the LM Evaluation Harness, as well as a suite of three *recall-intensive* tasks:
 
 - **SWDE** (Info. extraction). A popular information extraction benchmark for semi-structured data. SWDE includes raw HTML documents from 8 Movie and 5 University websites (e.g.IMDB, US News) and annotations for 8-274 attributes per website (e.g., Movie runtime). **HuggingFace: [hazyresearch/based-swde](https://huggingface.co/datasets/hazyresearch/based-swde)**
-- **FDA** (Info. extraction). A popular information extraction benchmark for unstructured data. The FDA setting contains 16 gold attributes and 100 PDF documents, which are up to 20 pages long, randomly sampled from FDA 510(k). **HuggingFace: hazyresearch/based-fda**
+- **FDA** (Info. extraction). A popular information extraction benchmark for unstructured data. The FDA setting contains 16 gold attributes and 100 PDF documents, which are up to 20 pages long, randomly sampled from FDA 510(k). **HuggingFace: [hazyresearch/based-fda](https://huggingface.co/datasets/hazyresearch/based-fda)**
 - **SQUAD-Completion** (Document-QA). We find that original SQUAD dataset is challenging for our models without instruction fine-tuning. So we introduce a modified version of SQUAD where questions are reworded as next-token prediction tasks. For example, "What is the capital of France?" becomes "The capital of France is". **HuggingFace: [hazyresearch/based-squad](https://huggingface.co/datasets/hazyresearch/based-swde)**
 
 Under `evaluate`, we have a clone of EleutherAI's [lm-evaluation-harness](https://github.com/EleutherAI/lm-evaluation-harness) that includes these new tasks and provides scripts for running all the evaluations from the paper. The following instructions can be used to reproduce our results on the [LM-Eval harness](https://github.com/EleutherAI/lm-evaluation-harness) using the pretrained checkpoints.
@@ -175,7 +175,7 @@ python launch.py \
     --model "hazyresearch/mamba-360m" \
     --model "hazyresearch/attn-360m" 
 ```
-Optionally, if you have access to multiple GPUs, you can pass the `-p` flag to run each evaluation in parallel. 
+Optionally, if you have access to multiple GPUs, you can pass the `-p` flag to run each evaluation on a different GPU. 
 To run a 100 samples for each task, use the `--limit=100` option.
 
 Below we include the results produced from running the command above. Note: the results below are on the new models trained and evaluated with the cleaned-up code in this repository. As a result, the results reported in our paper differ slightly.  
