@@ -61,7 +61,7 @@ model = GPTLMHeadModel.from_pretrained_hf("hazyresearch/based-360m").to("cuda", 
 | **Based**        | 360m | 10b   |[02-20-based-360m](https://wandb.ai/hazy-research/based/runs/02-20-based-360m) |[hazyresearch/based-360m](https://huggingface.co/hazyresearch/based-360m)     |reference/based-360m.yaml |
 | **Based**        | 1.4b | 10b   |[02-21-based-1b](https://wandb.ai/hazy-research/based/runs/02-24-based-1b)     |[hazyresearch/based-1b](https://huggingface.co/hazyresearch/based-1b)      |reference/based-1b.yaml |
 | **Attention**    | 360m | 10b   |[02-21-attn-360m](https://wandb.ai/hazy-research/based/runs/02-21-attn-360m-redo1) |[hazyresearch/attn-360m](https://huggingface.co/hazyresearch/attn-360m)     |reference/attn-360m.yaml |
-| **Attention**    | 1b | 10b   |[02-25-attn-1b](https://wandb.ai/hazy-research/based/runs/02-25-attn-1b) |[hazyresearch/attn-1b](https://huggingface.co/hazyresearch/attn-1b)     |reference/attn-360m.yaml |
+| **Attention**    | 1.4b | 10b   |[02-25-attn-1b](https://wandb.ai/hazy-research/based/runs/02-25-attn-1b) |[hazyresearch/attn-1b](https://huggingface.co/hazyresearch/attn-1b)     |reference/attn-360m.yaml |
 | **Mamba**        | 360m | 10b   |[02-21-mamba-360m](https://wandb.ai/hazy-research/based/runs/02-21-mamba-360m) |[hazyresearch/mamba-360m](https://huggingface.co/hazyresearch/mamba-360m)     |reference/mamba-360m.yaml |
 | **Mamba**        | 1.4b | 10b   |[02-22-mamba-1b](https://wandb.ai/hazy-research/based/runs/02-22-mamba-1b) |[hazyresearch/mamba-1b](https://huggingface.co/hazyresearch/mamba-1b)     |reference/mamba-1b.yaml |
 
@@ -144,7 +144,7 @@ Be sure to update the checkpointing directory [in the config](https://github.com
 In our paper, we evaluate pretrained language models on a standard suite of benchmarks from the LM Evaluation Harness, as well as a suite of three *recall-intensive* tasks:
 
 - **SWDE** (Info. extraction). A popular information extraction benchmark for semi-structured data. SWDE includes raw HTML documents from 8 Movie and 5 University websites (e.g.IMDB, US News) and annotations for 8-274 attributes per website (e.g., Movie runtime). **HuggingFace: [hazyresearch/based-swde](https://huggingface.co/datasets/hazyresearch/based-swde)**
-- **FDA** (Info. extraction). A popular information extraction benchmark for unstructured data. The FDA setting contains 16 gold attributes and 100 PDF documents, which are up to 20 pages long, randomly sampled from FDA 510(k). **HuggingFace: hazyresearch/based-fda**
+- **FDA** (Info. extraction). A popular information extraction benchmark for unstructured data. The FDA setting contains 16 gold attributes and 100 PDF documents, which are up to 20 pages long, randomly sampled from FDA 510(k). **HuggingFace: [hazyresearch/based-fda](https://huggingface.co/datasets/hazyresearch/based-fda)**
 - **SQUAD-Completion** (Document-QA). We find that original SQUAD dataset is challenging for our models without instruction fine-tuning. So we introduce a modified version of SQUAD where questions are reworded as next-token prediction tasks. For example, "What is the capital of France?" becomes "The capital of France is". **HuggingFace: [hazyresearch/based-squad](https://huggingface.co/datasets/hazyresearch/based-swde)**
 
 Under `evaluate`, we have a clone of EleutherAI's [lm-evaluation-harness](https://github.com/EleutherAI/lm-evaluation-harness) that includes these new tasks and provides scripts for running all the evaluations from the paper. The following instructions can be used to reproduce our results on the [LM-Eval harness](https://github.com/EleutherAI/lm-evaluation-harness) using the pretrained checkpoints.
@@ -168,23 +168,26 @@ For example, running the following from the `evaluate` folder will evaluate the 
 
 ```bash
 python launch.py \
-    --task swde  \
-    --task fda \
-    --task squad_completion \
+    --task swde  --task fda --task squad_completion \
     --model "hazyresearch/based-360m" \
     --model "hazyresearch/mamba-360m" \
-    --model "hazyresearch/attn-360m" 
+    --model "hazyresearch/attn-360m" \
+    --model "hazyresearch/based-1b" \
+    --model "hazyresearch/mamba-1b" \
+    --model "hazyresearch/attn-1b"
 ```
-Optionally, if you have access to multiple GPUs, you can pass the `-p` flag to run each evaluation in parallel. 
-To run a 100 samples for each task, use the `--limit=100` option.
+Optionally, if you have access to multiple GPUs, you can pass the `-p` flag to run each evaluation on a different GPU. 
+To run a limited number of samples for each task (_e.g._ 100), use the `--limit=100` option.
 
-Below we include the results produced from running the command above. Note: the results below are on the new models trained and evaluated with the cleaned-up code in this repository. As a result, the results reported in our paper differ slightly.  
-| *Architecture* | *Size* | *SWDE*| *FDA* | *SQUAD* |
-| ---            | ---    | ---   | ---   | ---     |
-| **Based**      | 360m   |26.61  |14.34  |24.23    |
-| **Mamba**      | 360m   |21.68  |5.90   |24.83    |
-| **Attention**  | 360m   |26.18  |57.89  |27.85    |
-
+Below we include the results produced from running the command above. Note: the results below are on the new models trained and evaluated with the cleaned-up code in this repository. As a result, the results reported in our paper differ slightly, however the trends and conclusions remain the same.
+| *Architecture* | *Size* |*HuggingFace* | *SWDE*| *FDA* | *SQUAD* |
+| ---            | ---    | ---          | ---   | ---   | ---     |
+| **Based**      | 360m   |[hazyresearch/based-360m](https://huggingface.co/hazyresearch/based-360m)  |25.65  |14.34  |24.23    |
+| **Mamba**      | 360m   |[hazyresearch/mamba-360m](https://huggingface.co/hazyresearch/mamba-360m)  |17.28  |5.90   |24.83    |
+| **Attention**  | 360m   |[hazyresearch/attn-360m](https://huggingface.co/hazyresearch/attn-360m)    |56.26  |57.89  |27.85    |
+| **Based**      | 1.4b   |[hazyresearch/attn-1b](https://huggingface.co/hazyresearch/based-1b)    |37.71  |19.06  |29.49    |
+| **Mamba**      | 1.4b   |[hazyresearch/attn-1b](https://huggingface.co/hazyresearch/mamba-1b)    |28.35  |11.07  |29.42    |
+| **Attention**  | 1.4b   |[hazyresearch/attn-1b](https://huggingface.co/hazyresearch/attn-1b)    |69.04  |68.87  |35.89    |
 
 ## Experiments on Synthetic Data
 In our paper, we demonstrate the recall-throughput tradeoff using a synthetic associative recall task (see Figure 2, below, and Figure 3 in the paper). 
