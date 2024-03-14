@@ -181,12 +181,12 @@ To run a 100 samples for each task, use the `--limit=100` option.
 Below we include the results produced from running the command above. Note: the results below are on the new models trained and evaluated with the cleaned-up code in this repository. As a result, the results reported in our paper differ slightly.  
 | *Architecture* | *Size* | *SWDE*| *FDA* | *SQUAD* |
 | ---            | ---    | ---   | ---   | ---     |
-| **Based**      | 360m   |26.61  |14.34  |24.23    |
-| **Mamba**      | 360m   |21.68  |5.90   |24.83    |
-| **Attention**  | 360m   |26.18  |57.89  |27.85    |
-| **Based**      | 1.4b   |22.78  |19.06  |29.49    |
-| **Mamba**      | 1.4b   |27.75  |11.07  |29.42    |
-| **Attention**  | 1.4b   |32.03  |68.87  |35.89    |
+| **Based**      | 360m   |25.65  |14.34  |24.23    |
+| **Mamba**      | 360m   |17.28  |5.90   |24.83    |
+| **Attention**  | 360m   |56.26  |57.89  |27.85    |
+| **Based**      | 1.4b   |37.71  |19.06  |29.49    |
+| **Mamba**      | 1.4b   |28.35  |11.07  |29.42    |
+| **Attention**  | 1.4b   |69.04  |68.87  |35.89    |
 
 ## Experiments on Synthetic Data
 In our paper, we demonstrate the recall-throughput tradeoff using a synthetic associative recall task (see Figure 2, below, and Figure 3 in the paper). 
