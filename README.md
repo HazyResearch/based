@@ -186,6 +186,7 @@ Below we include the results produced from running the command above. Note: the 
 | **Attention**  | 360m   |26.18  |57.89  |27.85    |
 | **Based**      | 1.4b   |22.78  |19.06  |29.49    |
 | **Mamba**      | 1.4b   |27.75  |11.07  |29.42    |
+| **Attention**  | 1.4b   |32.03  |68.87  |35.89    |
 
 ## Experiments on Synthetic Data
 In our paper, we demonstrate the recall-throughput tradeoff using a synthetic associative recall task (see Figure 2, below, and Figure 3 in the paper). 
