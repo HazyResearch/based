@@ -61,7 +61,7 @@ model = GPTLMHeadModel.from_pretrained_hf("hazyresearch/based-360m").to("cuda", 
 | **Based**        | 360m | 10b   |[02-20-based-360m](https://wandb.ai/hazy-research/based/runs/02-20-based-360m) |[hazyresearch/based-360m](https://huggingface.co/hazyresearch/based-360m)     |reference/based-360m.yaml |
 | **Based**        | 1.4b | 10b   |[02-21-based-1b](https://wandb.ai/hazy-research/based/runs/02-24-based-1b)     |[hazyresearch/based-1b](https://huggingface.co/hazyresearch/based-1b)      |reference/based-1b.yaml |
 | **Attention**    | 360m | 10b   |[02-21-attn-360m](https://wandb.ai/hazy-research/based/runs/02-21-attn-360m-redo1) |[hazyresearch/attn-360m](https://huggingface.co/hazyresearch/attn-360m)     |reference/attn-360m.yaml |
-| **Attention**    | 1b | 10b   |[02-25-attn-1b](https://wandb.ai/hazy-research/based/runs/02-25-attn-1b) |[hazyresearch/attn-1b](https://huggingface.co/hazyresearch/attn-1b)     |reference/attn-360m.yaml |
+| **Attention**    | 1.4b | 10b   |[02-25-attn-1b](https://wandb.ai/hazy-research/based/runs/02-25-attn-1b) |[hazyresearch/attn-1b](https://huggingface.co/hazyresearch/attn-1b)     |reference/attn-360m.yaml |
 | **Mamba**        | 360m | 10b   |[02-21-mamba-360m](https://wandb.ai/hazy-research/based/runs/02-21-mamba-360m) |[hazyresearch/mamba-360m](https://huggingface.co/hazyresearch/mamba-360m)     |reference/mamba-360m.yaml |
 | **Mamba**        | 1.4b | 10b   |[02-22-mamba-1b](https://wandb.ai/hazy-research/based/runs/02-22-mamba-1b) |[hazyresearch/mamba-1b](https://huggingface.co/hazyresearch/mamba-1b)     |reference/mamba-1b.yaml |
 
@@ -168,17 +168,18 @@ For example, running the following from the `evaluate` folder will evaluate the 
 
 ```bash
 python launch.py \
-    --task swde  \
-    --task fda \
-    --task squad_completion \
+    --task swde  --task fda --task squad_completion \
     --model "hazyresearch/based-360m" \
     --model "hazyresearch/mamba-360m" \
-    --model "hazyresearch/attn-360m" 
+    --model "hazyresearch/attn-360m" \
+    --model "hazyresearch/based-1b" \
+    --model "hazyresearch/mamba-1b" \
+    --model "hazyresearch/attn-1b"
 ```
 Optionally, if you have access to multiple GPUs, you can pass the `-p` flag to run each evaluation on a different GPU. 
 To run a 100 samples for each task, use the `--limit=100` option.
 
-Below we include the results produced from running the command above. Note: the results below are on the new models trained and evaluated with the cleaned-up code in this repository. As a result, the results reported in our paper differ slightly.  
+Below we include the results produced from running the command above. Note: the results below are on the new models trained and evaluated with the cleaned-up code in this repository. As a result, the results reported in our paper differ slightly, however the trends and conclusions remain the same.
 | *Architecture* | *Size* | *SWDE*| *FDA* | *SQUAD* |
 | ---            | ---    | ---   | ---   | ---     |
 | **Based**      | 360m   |25.65  |14.34  |24.23    |
