@@ -177,7 +177,7 @@ python launch.py \
     --model "hazyresearch/attn-1b"
 ```
 Optionally, if you have access to multiple GPUs, you can pass the `-p` flag to run each evaluation on a different GPU. 
-To run a 100 samples for each task, use the `--limit=100` option.
+To run a limited number of samples for each task (_e.g._ 100), use the `--limit=100` option.
 
 Below we include the results produced from running the command above. Note: the results below are on the new models trained and evaluated with the cleaned-up code in this repository. As a result, the results reported in our paper differ slightly, however the trends and conclusions remain the same.
 | *Architecture* | *Size* |*HuggingFace* | *SWDE*| *FDA* | *SQUAD* |
