@@ -114,10 +114,12 @@ cd apex
 pip install -v --disable-pip-version-check --no-cache-dir --no-build-isolation --config-settings "--build-option=--cpp_ext" --config-settings "--build-option=--cuda_ext" ./
 cd ..
 
-# install kernel (to be replced with new custom kernels)
+# install linear attention kernel (to be replced with new custom kernels)
 cd train/csrc/causal_dot_prod/
 python setup.py install
 ```
+
+Kernels for other fused operations: The config defaults will use fused kernels from the Flash Attention repo, which can all be installed by cloning the repo and ```python setup.py install``` the relevant [kernels here](https://github.com/Dao-AILab/flash-attention/tree/main/csrc). In particular, the fused_dense_lib, layer_norm, rotary, and xentropy kernels. Alternatively, you can change the codepaths to avoid the use of these kernels -- for instance by specifying fused_dense False in the experiment config, or by replacing the RMSNorm import in ```based/models/gpt.py``` to import from ```based/ops/triton/layer_norm```. 
 
 To train a new model, construct a config.yaml file at ```train/configs/experiment/```. We are including the configs used to produce the pretrained checkpoints for the paper (released on HF below) at ```train/configs/experiment/reference/```.
 

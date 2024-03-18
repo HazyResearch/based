@@ -53,7 +53,8 @@ try:
     from flash_attn.ops.rms_norm import RMSNorm, dropout_add_rms_norm
 except ImportError:
     RMSNorm, dropout_add_rms_norm = None, None
-    
+
+# You can replace the above import with the following if you do not want to install the flash_attention kernel!  
 # from based.ops.triton.layer_norm import RMSNorm
 
 try:

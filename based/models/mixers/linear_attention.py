@@ -9,10 +9,12 @@ from einops import rearrange
 
 from based.generation import InferenceParams
 
+import sys
+sys.path.append("../../../")
 
 try:
-    
-    from train.csrc.causal_dot_prod import causal_dot_product  # linear attention cuda kernel
+    from train.csrc import causal_dot_product  # linear attention cuda kernel
+    print(f"Successfully imported the causal dot product kernel! ")
 except:
     print(f"Could not import the causal dot product kernel... ")
     causal_dot_product = None
