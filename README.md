@@ -193,6 +193,8 @@ Below we include the results produced from running the command above. Note: the 
 | **Mamba**      | 1.4b   |[hazyresearch/attn-1b](https://huggingface.co/hazyresearch/mamba-1b)    |28.35  |11.07  |29.42    |
 | **Attention**  | 1.4b   |[hazyresearch/attn-1b](https://huggingface.co/hazyresearch/attn-1b)    |69.04  |68.87  |35.89    |
 
+Note that the results shown may differ slightly if the Flash-Attention kernels are not used during inference.
+
 ## Experiments on Synthetic Data
 In our paper, we demonstrate the recall-throughput tradeoff using a synthetic associative recall task (see Figure 2, below, and Figure 3 in the paper). 
 <div align="center" >
