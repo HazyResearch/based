@@ -120,7 +120,7 @@ def create_mixer_cls(config, layer_idx=None, process_group=None, device=None, dt
     return mixer_cls
 
 
-def create_mlp_cls(config, layer_idx=None, process_group=None, device=None, dtype=None):
+def create_mlp_cls(config, layer_idx=None, process_group=None, device=None, dtype=None, multiple_of=256):
     factory_kwargs = {"device": device, "dtype": dtype}
     mlp_fc1_bias = getattr(config, "mlp_fc1_bias", True)
     mlp_fc2_bias = getattr(config, "mlp_fc2_bias", True)
@@ -177,7 +177,7 @@ def create_mlp_cls(config, layer_idx=None, process_group=None, device=None, dtyp
                 activation=activation,
                 bias1=mlp_fc1_bias,
                 bias2=mlp_fc2_bias,
-                multiple_of=256,
+                multiple_of=multiple_of,
                 **parallel_kwargs,
                 **factory_kwargs,
             )
@@ -261,11 +261,11 @@ def create_mlp_cls(config, layer_idx=None, process_group=None, device=None, dtyp
     return mlp_cls
 
 
-def create_block(config, layer_idx=None, process_group=None, device=None, dtype=None):
+def create_block(config, layer_idx=None, process_group=None, device=None, dtype=None, multiple_of=256):
     factory_kwargs = {"device": device, "dtype": dtype}
     sequence_parallel = getattr(config, "sequence_parallel", True)
     mixer_cls = create_mixer_cls(config, layer_idx, process_group=process_group, **factory_kwargs)
-    mlp_cls = create_mlp_cls(config, layer_idx, process_group=process_group, **factory_kwargs)
+    mlp_cls = create_mlp_cls(config, layer_idx, process_group=process_group,multiple_of=multiple_of, **factory_kwargs)
     use_rms_norm = getattr(config, "rms_norm", False)
     norm_cls = partial(
         nn.LayerNorm if not use_rms_norm else RMSNorm,
@@ -335,7 +335,10 @@ class GPTPreTrainedModel(nn.Module):
 
         config_data = load_config_hf(pretrained_model_name)
         config = GPT2Config(**config_data)
-        model = GPTLMHeadModel(config=config, device=device, dtype=torch.float16)
+        try:
+            model = GPTLMHeadModel(config=config, device=device, dtype=torch.float16)
+        except:
+            model = GPTLMHeadModel(config=config, device=device, dtype=torch.float16, multiple_of=128)
         state_dict = state_dict_from_pretrained(pretrained_model_name, dtype=torch.float16)
         # remove the 'model.' prefix from the keys
         state_dict = {re.sub("^model\.", "", k): v for k, v in state_dict.items()}
@@ -378,7 +381,7 @@ def _init_weights(
 
 
 class GPTModel(GPTPreTrainedModel):
-    def __init__(self, config: GPT2Config, process_group=None, device=None, dtype=None):
+    def __init__(self, config: GPT2Config, process_group=None, device=None, dtype=None, multiple_of=256):
         super().__init__(config)
         factory_kwargs = {"device": device, "dtype": dtype}
         self.process_group = process_group
@@ -435,7 +438,7 @@ class GPTModel(GPTPreTrainedModel):
         # This is for performance reason: we can fuse dropout + add + layer_norm.
         self.layers = nn.ModuleList(
             [
-                create_block(config, layer_idx=i, process_group=process_group, **factory_kwargs)
+                create_block(config, layer_idx=i, process_group=process_group, multiple_of=multiple_of, **factory_kwargs)
                 for i in range(config.num_hidden_layers)
             ]
         )
@@ -546,11 +549,11 @@ class GPTModel(GPTPreTrainedModel):
 
 
 class GPTLMHeadModel(GPTPreTrainedModel, GenerationMixin, NaiveGenerationMixin):
-    def __init__(self, config: GPT2Config, process_group=None, device=None, dtype=None):
+    def __init__(self, config: GPT2Config, process_group=None, device=None, dtype=None, multiple_of=256):
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__(config)
         self.process_group = process_group
-        self.transformer = GPTModel(config, process_group=process_group, **factory_kwargs)
+        self.transformer = GPTModel(config, process_group=process_group, multiple_of=multiple_of, **factory_kwargs)
         self.tie_word_embeddings = getattr(config, "tie_word_embeddings", True)
         lm_head_bias = getattr(config, "lm_head_bias", False)
         pad_vocab_size_multiple = getattr(config, "pad_vocab_size_multiple", 1)

@@ -168,6 +168,8 @@ We provide a script `evaluate/launch.py` that launch evaluations on the checkpoi
 
 For example, running the following from the `evaluate` folder will evaluate the 360M Based, Mamba, and Attention models on the SWDE dataset.
 
+You can set your huggingface cache directory to a location with sufficient space (```export TRANSFORMERS_CACHE```, ```export HF_HOME```).
+
 ```bash
 python launch.py \
     --task swde  --task fda --task squad_completion \

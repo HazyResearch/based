@@ -83,7 +83,7 @@ model:
 
     alt_mixer_2:
       _target_: based.models.mixers.slide_attention.SlidingAttention
-      window_size: 128 
+      window_size: 256 
       num_heads: 16
       causal: true
 
