@@ -70,14 +70,5 @@ callbacks:
     dirpath: /var/cr01_data/sim_data/checkpoints/${oc.select:name,''} #${work_dir}/checkpoints/${oc.select:name,''}
     filename: step_{step}
     auto_insert_metric_name: False
-  model_checkpoint_progress:
-    _target_: train.callbacks.model_checkpoint.ModelCheckpointMine
-    # fault_tolerant: True  # The .pl_auto_save.ckpt doesn't get saved by all workers
-    every_n_train_steps: 50000
-    save_last: False
-    save_top_k: -1  # Save all the checkpoints
-    dirpath: /var/cr01_data/sim_data/ #${..model_checkpoint.dirpath}
-    filename: progress_step_{step}
-    auto_insert_metric_name: False
   early_stopping: null
 
