@@ -108,17 +108,14 @@ In order to train a new model with our code, you'll need to do a bit of addition
 # install train extra dependencies
 pip install -e .[train]
 
-# install apex
+# install apex (if you run into issues, likely candidates are torch or pip version issues; if using torch 2.0.1, this may help https://github.com/NVIDIA/apex/issues/1735)
 git clone https://github.com/NVIDIA/apex
 cd apex
 pip install -v --disable-pip-version-check --no-cache-dir --no-build-isolation --config-settings "--build-option=--cpp_ext" --config-settings "--build-option=--cuda_ext" ./
 cd ..
-
-# install linear attention kernel (to be replaced with new custom kernels)
-cd train/csrc/causal_dot_prod/
-python setup.py install
 ```
 
+### Launching Training
 Kernels for other fused operations: The config defaults will use fused kernels from the Flash Attention repo, which can all be installed by cloning the repo and ```python setup.py install``` the relevant [kernels here](https://github.com/Dao-AILab/flash-attention/tree/main/csrc). In particular, the fused_dense_lib, layer_norm, rotary, and xentropy kernels. Alternatively, you can change the codepaths to avoid the use of these kernels -- for instance by specifying fused_dense False in the experiment config, or by replacing the RMSNorm import in ```based/models/gpt.py``` to import from ```based/ops/triton/layer_norm```. 
 
 To train a new model, construct a config.yaml file at ```train/configs/experiment/```. We are including the configs used to produce the pretrained checkpoints for the paper (released on HF below) at ```train/configs/experiment/reference/```.
@@ -139,7 +136,28 @@ You can adapt the training dataset by adding a new dataset config file under ```
 
 Be sure to update the checkpointing directory [in the config](https://github.com/HazyResearch/based/blob/3fb009b8216b41d14ea3a2ab9552a5c609ef0bf4/train/configs/experiment/example/based-360m.yaml#L39) prior to launching training.
 
- Note that this training code is from: https://github.com/Dao-AILab/flash-attention/tree/main/training
+
+### Fast Training
+We support a few different training views in this repo. The choice of ```parallel_implementation``` in your training config determines which training view gets used (https://github.com/HazyResearch/based/blob/e86e21401ad26e38a46590e73af43868f4a98b2a/based/models/mixers/linear_attention.py#L73). The default, which requires installing no kernels, simply retains a quadratic O(n^2) view during training. We currently recommend using Option 2 below for drastically faster training. These will be replaced with our new custom kernels (from the Based paper), to be released soon. 
+
+- Option 1 (```parallel_implementation = "quadratic"```): default, quadratic PyTorch view.  
+- Option 2 (```parallel_implementation = "fla_parallel"```): Flash linear attention kernel (https://github.com/sustcsonglin/flash-linear-attention). Use the following to install:
+```
+pip install triton==2.2.0
+pip install -U git+https://github.com/sustcsonglin/flash-linear-attention
+```
+- Option 3 (```parallel_implementation = "linear"```): Fast transformers linear attention kernel. Use the following to install:
+```
+cd train/csrc/causal_dot_prod/
+python setup.py install
+```
+
+We have provided benchmarking plots for different kernels in the ```benchmark/examples/linear_attention_forward/``` folder. We are providing [WandB training curves here](https://api.wandb.ai/links/simarora/ryv84b55) showing how training using the ```fla-parallel``` mode allows Based to faster than Mamba at the 360M parameter scale at strong quality!
+
+
+### Additional notes: 
+- If you want to explore the optional decay strategy discussed in the Based paper, you can checkout the ```notebooks/03-31-decay.ipynb``` notebook.
+- Note that this training code is from: https://github.com/Dao-AILab/flash-attention/tree/main/training, the Flash Linear Attention kernel is from https://github.com/sustcsonglin/flash-linear-attention, and the Fast Transformers kernel is from https://github.com/idiap/fast-transformers. Please cite them if you use their work!
 
 
 ## Evaluate
@@ -242,11 +260,13 @@ This repo contains work based on the following papers. Please consider citing if
 }
 ```
 
-This project was made possible by a number of other open source projects; please cite if you use their work. Notably:
+
+This project was made possible by a number of other open source projects; please cite if you use their work! Notably:
 - Our training code and sliding window implementation are based on Tri Dao's [FlashAttention](https://github.com/Dao-AILab/flash-attention). 
 - We use EleutherAI's [lm-evaluation-harness](https://github.com/EleutherAI/lm-evaluation-harness) for evaluation. 
-- We use the causal dot product kernel from Fast Transformers in preliminary training [Fast Transformers](https://github.com/idiap/fast-transformers).
 - We use the conv1d kernel from [Mamba](https://github.com/state-spaces/mamba/tree/main).
+- We integrated the causal dot product kernel from [Fast Transformers](https://github.com/idiap/fast-transformers).
+- We integrated the based kernels from [Flash Linear Attention](https://github.com/sustcsonglin/flash-linear-attention).
 
 
 Models in this project were trained using compute provided by:  

@@ -8,7 +8,14 @@ Updates Log:
 ### Setup
 
 Source code containing helper functions and data types for the kernels are in ```src/```. To setup the environment correctly, please run the commands provided in ```env.src```.
-You will need to use gcc ++20 to compile the kernels. 
+You will need to use gcc ++20 to compile the kernels.
+
+If you run into an error ```nvcc fatal   : Value 'c++20' is not defined for option 'std'```, then confirm that you're pointing to an updated version of CUDA, and that yyou're pointing to a matching version of torch.
+```
+export CUDA_HOME=/usr/local/cuda/
+export PATH=${CUDA_HOME}/bin:${PATH} 
+export LD_LIBRARY_PATH=${CUDA_HOME}/lib64:$LD_LIBRARY_PATH
+```
 ** the source code will be released soon **
 
 

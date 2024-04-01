@@ -3,7 +3,7 @@ import sys
 import os
 import time
 current_dir = os.path.dirname(os.path.abspath(__file__))
-project_root = os.path.abspath(os.path.join(current_dir, "../../../"))
+project_root = os.path.abspath(os.path.join(current_dir, "../../"))
 sys.path.insert(0, project_root)
 from src.pyutils.test_build_utils import __eq
 import linear_attend_causal_reg as mod
@@ -16,16 +16,96 @@ import torch
 import torch.nn as nn
 from typing import Optional
 
-# sys.path.append("/var/cr05_data/sim_data/code/based/train/")
-sys.path.append("/cudatastic/based-dev/train/")
-from csrc import causal_dot_product
+sys.path.append("/var/cr05_data/sim_data/code/release/based/train/")
+# sys.path.append("/cudatastic/based-dev/train/")
+from csrc.causal_dot_prod import causal_dot_product
 
+# install from https://github.com/sustcsonglin/flash-linear-attention
+from fla.ops.based import fused_chunk_based, parallel_based
+from fla.ops.based.naive import naive_parallel_based
+from fla.ops.gla import chunk_gla, fused_chunk_gla, fused_recurrent_gla
+from flash_attn import flash_attn_func
+
+
+# Flash Attention 
+def flash_attention_test(dt, q, k, v, d, verbose=True):
+    q = torch.randn_like(v).transpose(1,2)
+    k = torch.randn_like(v).transpose(1,2)
+    v = torch.randn_like(v).transpose(1,2)
+
+    torch.cuda.synchronize()
+    t0 = time.time()
+
+    y = flash_attn_func(
+        q, k, v,
+        softmax_scale=0.5,
+        causal=True, 
+    )
+    torch.cuda.synchronize()
+    t1 = time.time()
+    tot = t1-t0
+
+    return y, tot
+
+
+# GLA Versions
+
+def  fla_gla_chunk_test(dt, q, k, v, d, verbose=True):
+    q = torch.randn_like(v)
+    k = torch.randn_like(v)
+    v = torch.randn_like(v)
+    g = torch.randn_like(v)
+
+    torch.cuda.synchronize()
+    t0 = time.time()
+
+    y, _ = chunk_gla(q, k, v, g)
+
+    torch.cuda.synchronize()
+    t1 = time.time()
+    tot = t1-t0
+    return y, tot
+
+def fla_gla_fused_chunk_test(dt, q, k, v, d, verbose=True):
+    q = torch.randn_like(v)
+    k = torch.randn_like(v)
+    v = torch.randn_like(v)
+    g = torch.randn_like(v)
+
+    torch.cuda.synchronize()
+    t0 = time.time()
+
+    y, _ = fused_chunk_gla(q, k, v, g)
+
+    torch.cuda.synchronize()
+    t1 = time.time()
+    tot = t1-t0
+    return y, tot
+
+def fla_gla_fused_recurrent_test(dt, q, k, v, d, verbose=True):
+    q = torch.randn_like(v)
+    k = torch.randn_like(v)
+    v = torch.randn_like(v)
+    g = torch.randn_like(v)
+
+    torch.cuda.synchronize()
+    t0 = time.time()
+
+    y, _ = fused_recurrent_gla(q, k, v, g)
+
+    torch.cuda.synchronize()
+    t1 = time.time()
+    tot = t1-t0
+    return y, tot
+
+# Based Versions
 
 def make_causal(X):
     (b,h,n,m) = X.shape
     mask= ~(torch.arange(n).view(1,1,n,1) >= torch.arange(n).view(1,1,1,n)).expand(b,h,n,n)
     X[mask] = 0.
     return X
+
 
 class TaylorExp(nn.Module):
     """
@@ -100,18 +180,58 @@ def fast_transformer_test(dt, q, k, v, d, verbose=True):
     torch.cuda.synchronize()
     t0 = time.time()
 
-    q, k = feature_map(q), feature_map(k)
-    v = causal_dot_product(
-        q.contiguous().to(dtype=torch.float32), 
-        k.contiguous().to(dtype=torch.float32),
-        v.contiguous().to(dtype=torch.float32),
-    )
-    # z = 1 / torch.einsum(
-    #         "bhld,bhld->bhl", 
-    #         q.to(dtype=torch.float32), 
-    #         k.to(dtype=torch.float32).cumsum(2)
-    #     )
-    y = v # * z[..., None]
+    try:
+        q, k = feature_map(q), feature_map(k)
+        v = causal_dot_product(
+            q.contiguous().to(dtype=torch.float32), 
+            k.contiguous().to(dtype=torch.float32),
+            v.contiguous().to(dtype=torch.float32),
+        )
+        # z = 1 / torch.einsum(
+        #         "bhld,bhld->bhl", 
+        #         q.to(dtype=torch.float32), 
+        #         k.to(dtype=torch.float32).cumsum(2)
+        #     )
+        y = v # * z[..., None]
+    except:
+        tot = -1
+        y = None
+
+    torch.cuda.synchronize()
+    t1 = time.time()
+    tot = t1-t0
+    return y, tot
+
+
+def fla_parallel_based_test(dt, q, k, v, d, verbose=True):
+    torch.cuda.synchronize()
+    t0 = time.time()
+
+    y = parallel_based(q, k, v, False, False)
+
+    torch.cuda.synchronize()
+    t1 = time.time()
+    tot = t1-t0
+    return y, tot
+
+
+def fla_naive_parallel_based(dt, q, k, v, d, verbose=True):
+    torch.cuda.synchronize()
+    t0 = time.time()
+
+    y = naive_parallel_based(q, k, v, False, False)
+
+    torch.cuda.synchronize()
+    t1 = time.time()
+    tot = t1-t0
+    return y, tot
+
+
+def fla_fused_chunk_test(dt, q, k, v, d, verbose=True):
+    torch.cuda.synchronize()
+    t0 = time.time()
+
+    y = fused_chunk_based(q, k, v, False, False)
 
     torch.cuda.synchronize()
     t1 = time.time()
@@ -136,15 +256,26 @@ def based_kernel_test(dt, Q, K, V, d, verbose=True):
 def linear_attn_forward_benchmark(dt,verbose=False, use_ones=False, profile=False):
     num_iters = 10
     methods = {
+        # Based
         # 'Pure PyTorch (Alg. 1)': pytorch_test, 
-        'Pure PyTorch': pytorch_test_v2,
-        'Fast Transformers Kernel': fast_transformer_test, 
-        'Based Kernel': based_kernel_test
+        'Based PyTorch': pytorch_test_v2,
+        'Based Fast Transformers': fast_transformer_test, 
+        'Based Custom': based_kernel_test,
+        'Based Fla Fused Chunk': fla_fused_chunk_test,
+        'Based Fla Parallel': fla_parallel_based_test,
+
+        # GLA
+        'GLA Chunk': fla_gla_chunk_test,
+        'GLA Fused Chunk': fla_gla_fused_chunk_test,
+        'GLA Fused Recurrent': fla_gla_fused_recurrent_test,
+
+        # FA2
+        'Flash Attention': flash_attention_test,
     }
     method2timing = defaultdict(dict)
     for b in [1, 2, 4, 8, 16, 32, 128, 256]:
         h = 16
-        n = 1024 
+        n = 2048 
         d = 16
         dv = 64
         print(f"{b=}, {n=}, {d=}, {h=}")
@@ -169,16 +300,27 @@ def linear_attn_forward_benchmark(dt,verbose=False, use_ones=False, profile=Fals
     ax.set_ylabel('Time (ms)')
     ax.legend()
     # save pdf
-    plt.savefig('h100_lin-attn-fwd_benchmark.pdf', format='pdf', bbox_inches='tight')
+    plt.savefig(f'a100_lin-attn-fwd_benchmark-L{n}.pdf', format='pdf', bbox_inches='tight')
 
 
 def linear_attn_forward_benchmark_seqlen(dt,verbose=False, use_ones=False, profile=False):
     num_iters = 10
     methods = {
+        # Based
         # 'Pure PyTorch (Alg. 1)': pytorch_test, 
-        'Pure PyTorch': pytorch_test_v2,
-        'Fast Transformers Kernel': fast_transformer_test, 
-        'Based Kernel': based_kernel_test
+        'Based PyTorch': pytorch_test_v2,
+        'Based Fast Transformers': fast_transformer_test, 
+        'Based Kernel': based_kernel_test,
+        'Based Fla Fused Chunk': fla_fused_chunk_test,
+        'Based Fla Parallel': fla_parallel_based_test,
+
+        # GLA
+        'GLA Chunk': fla_gla_chunk_test,
+        'GLA Fused Chunk': fla_gla_fused_chunk_test,
+        'GLA Fused Recurrent': fla_gla_fused_recurrent_test,
+
+        # FA2
+        'Flash Attention': flash_attention_test,
     }
     method2timing = defaultdict(dict)
     for n in [256, 512, 1024, 2048, 4096, 8192, 16384, 32768]:
@@ -209,7 +351,7 @@ def linear_attn_forward_benchmark_seqlen(dt,verbose=False, use_ones=False, profi
     ax.legend()
 
     # save pdf
-    plt.savefig('h100_lin-attn-fwd_benchmark_seqlen.pdf', format='pdf', bbox_inches='tight') 
+    plt.savefig('a100_lin-attn-fwd_benchmark_seqlen.pdf', format='pdf', bbox_inches='tight') 
 
 
 def linear_attn_correct(dt):
