@@ -138,10 +138,12 @@ Be sure to update the checkpointing directory [in the config](https://github.com
 
 
 ### Fast Training
-We support a few different training views in this repo. The choice of ```parallel_implementation``` in your training config determines which training view gets used (https://github.com/HazyResearch/based/blob/e86e21401ad26e38a46590e73af43868f4a98b2a/based/models/mixers/linear_attention.py#L73). The default, which requires installing no kernels, simply retains a quadratic O(n^2) view during training. We currently recommend using Option 2 below for drastically faster training. These will be replaced with our new custom kernels (from the Based paper), to be released soon. 
+We support a few different training views in this repo. The choice of ```parallel_implementation``` in your training config determines which training view gets used: 
+https://github.com/HazyResearch/based/blob/e86e21401ad26e38a46590e73af43868f4a98b2a/based/models/mixers/linear_attention.py#L73
+The default, which requires installing no kernels, simply retains a quadratic O(n^2) view during training. We currently recommend using Option 2 below for drastically faster training. These will be replaced with our new custom kernels (from the Based paper), to be released soon. 
 
 - Option 1 (```parallel_implementation = "quadratic"```): default, quadratic PyTorch view.  
-- Option 2 (```parallel_implementation = "fla_parallel"```): Flash linear attention kernel (https://github.com/sustcsonglin/flash-linear-attention). Use the following to install:
+- Option 2 (```parallel_implementation = "fla_parallel"```): Flash linear attention kernel. Use the following to install:
 ```
 pip install triton==2.2.0
 pip install -U git+https://github.com/sustcsonglin/flash-linear-attention
@@ -152,12 +154,12 @@ cd train/csrc/causal_dot_prod/
 python setup.py install
 ```
 
-We have provided benchmarking plots for different kernels in the ```benchmark/examples/linear_attention_forward/``` folder. We are providing [WandB training curves here](https://api.wandb.ai/links/simarora/ryv84b55) showing how training using the ```fla-parallel``` mode allows Based to faster than Mamba at the 360M parameter scale at strong quality!
+We have provided benchmarking plots for different kernels in the [benchmark/examples/linear_attention_forward/](https://github.com/HazyResearch/based/tree/main/benchmark) folder. We are providing [WandB training curves here](https://api.wandb.ai/links/simarora/ryv84b55) showing how training using the ```fla-parallel``` mode allows Based to train fast with strong quality!
 
 
 ### Additional notes: 
-- If you want to explore the optional decay strategy discussed in the Based paper, you can checkout the ```notebooks/03-31-decay.ipynb``` notebook.
-- Note that this training code is from: https://github.com/Dao-AILab/flash-attention/tree/main/training, the Flash Linear Attention kernel is from https://github.com/sustcsonglin/flash-linear-attention, and the Fast Transformers kernel is from https://github.com/idiap/fast-transformers. Please cite them if you use their work!
+- If you want to explore the optional decay strategy discussed in the Based paper, you can checkout the [notebooks/03-31-decay.ipynb](https://github.com/HazyResearch/based/blob/main/notebooks/03-31-decay.ipynb) notebook.
+- Note that this training code is from: https://github.com/Dao-AILab/flash-attention/tree/main/training, the Flash Linear Attention kernel is from https://github.com/sustcsonglin/flash-linear-attention, and the Fast Transformers kernel is from https://github.com/idiap/fast-transformers. **Please cite them if you use their work!**
 
 
 ## Evaluate
