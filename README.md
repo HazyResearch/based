@@ -115,9 +115,9 @@ pip install -v --disable-pip-version-check --no-cache-dir --no-build-isolation -
 cd ..
 ```
 
-### Launching Training
-Kernels for other fused operations: The config defaults will use fused kernels from the Flash Attention repo, which can all be installed by cloning the repo and ```python setup.py install``` the relevant [kernels here](https://github.com/Dao-AILab/flash-attention/tree/main/csrc). In particular, the fused_dense_lib, layer_norm, rotary, and xentropy kernels. Alternatively, you can change the codepaths to avoid the use of these kernels -- for instance by specifying fused_dense False in the experiment config, or by replacing the RMSNorm import in ```based/models/gpt.py``` to import from ```based/ops/triton/layer_norm```. 
+We breakdown this section into three parts: 1) how to set up a training config and launch; 2) how to set up fast training kernels, and 3) how to install extra optimizations for training.
 
+### Launching Training
 To train a new model, construct a config.yaml file at ```train/configs/experiment/```. We are including the configs used to produce the pretrained checkpoints for the paper (released on HF below) at ```train/configs/experiment/reference/```.
 
 You can launch a training job using the following command from the ```train/``` directory, where you can modify the config name and number of GPUs (```trainer.devices```):
@@ -158,8 +158,9 @@ We have provided benchmarking plots for different kernels in the [benchmark/exam
 
 
 ### Additional notes: 
-- If you want to explore the optional decay strategy discussed in the Based paper, you can checkout the [notebooks/03-31-decay.ipynb](https://github.com/HazyResearch/based/blob/main/notebooks/03-31-decay.ipynb) notebook.
-- Note that this training code is from: https://github.com/Dao-AILab/flash-attention/tree/main/training, the Flash Linear Attention kernel is from https://github.com/sustcsonglin/flash-linear-attention, and the Fast Transformers kernel is from https://github.com/idiap/fast-transformers. **Please cite them if you use their work!**
+- **Kernels for other fused operations:** The config defaults will use fused kernels from the Flash Attention repo, which can all be installed by cloning the Flash Attention repo and ```python setup.py install``` the relevant [kernels here](https://github.com/Dao-AILab/flash-attention/tree/main/csrc). In particular, the fused_dense_lib, layer_norm, rotary, and xentropy kernels. Alternatively, you can change the codepaths to avoid the use of these kernels -- for instance by specifying fused_dense False in the experiment config, or by replacing the RMSNorm import in ```based/models/gpt.py``` to import from ```based/ops/triton/layer_norm```. 
+- **Decay** If you want to explore the optional decay strategy discussed in the Based paper, you can checkout the [notebooks/03-31-decay.ipynb](https://github.com/HazyResearch/based/blob/main/notebooks/03-31-decay.ipynb) notebook.
+- **References** Note that this training code is from: https://github.com/Dao-AILab/flash-attention/tree/main/training, the Flash Linear Attention kernel is from https://github.com/sustcsonglin/flash-linear-attention, and the Fast Transformers kernel is from https://github.com/idiap/fast-transformers. **Please cite them if you use their work!**
 
 
 ## Evaluate
