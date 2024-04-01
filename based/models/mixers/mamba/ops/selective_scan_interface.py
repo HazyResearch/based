@@ -6,8 +6,13 @@ from torch.cuda.amp import custom_bwd, custom_fwd
 
 from einops import rearrange, repeat
 
-from causal_conv1d import causal_conv1d_fn
-import causal_conv1d_cuda
+try:
+    from causal_conv1d import causal_conv1d_fn
+    import causal_conv1d_cuda
+except ImportError:
+    causal_conv1d_fn = None
+    causal_conv1d_cuda = None
+
 import selective_scan_cuda
 
 
@@ -100,7 +105,6 @@ def selective_scan_ref(u, delta, A, B, C, D=None, z=None, delta_bias=None, delta
     """
     dtype_in = u.dtype
     u = u.float()
-    # breakpoint()
     delta = delta.float()
     if delta_bias is not None:
         delta = delta + delta_bias[..., None].float()
@@ -119,12 +123,12 @@ def selective_scan_ref(u, delta, A, B, C, D=None, z=None, delta_bias=None, delta
         C = C.float()
     x = A.new_zeros((batch, dim, dstate))
     ys = []
-    deltaA = torch.exp(torch.einsum('bdl,dn->bdln', delta, A))  # (B 2D L D_state); Broadcast
+    deltaA = torch.exp(torch.einsum('bdl,dn->bdln', delta, A))
     if not is_variable_B:
         deltaB_u = torch.einsum('bdl,dn,bdl->bdln', delta, B, u)
     else:
         if B.dim() == 3:
-            deltaB_u = torch.einsum('bdl,bnl,bdl->bdln', delta, B, u) 
+            deltaB_u = torch.einsum('bdl,bnl,bdl->bdln', delta, B, u)
         else:
             B = repeat(B, "B G N L -> B (G H) N L", H=dim // B.shape[1])
             deltaB_u = torch.einsum('bdl,bdnl,bdl->bdln', delta, B, u)
@@ -132,11 +136,6 @@ def selective_scan_ref(u, delta, A, B, C, D=None, z=None, delta_bias=None, delta
         C = repeat(C, "B G N L -> B (G H) N L", H=dim // C.shape[1])
     last_state = None
     for i in range(u.shape[2]):
-
-        # deltaA[i]     [B  2*D D_state]
-        # deltaB_u[i]   [B  2*D D_state]
-        # X             [B  2*D D_state]
-
         x = deltaA[:, :, i] * x + deltaB_u[:, :, i]
         if not is_variable_C:
             y = torch.einsum('bdn,dn->bd', x, C)
@@ -169,6 +168,7 @@ class MambaInnerFn(torch.autograd.Function):
         """
              xz: (batch, dim, seqlen)
         """
+        assert causal_conv1d_cuda is not None, "causal_conv1d_cuda is not available. Please install causal-conv1d."
         assert checkpoint_lvl in [0, 1]
         L = xz.shape[-1]
         delta_rank = delta_proj_weight.shape[1]
@@ -184,7 +184,9 @@ class MambaInnerFn(torch.autograd.Function):
         conv1d_weight = rearrange(conv1d_weight, "d 1 w -> d w")
         x, z = xz.chunk(2, dim=1)
         conv1d_bias = conv1d_bias.contiguous() if conv1d_bias is not None else None
-        conv1d_out = causal_conv1d_cuda.causal_conv1d_fwd(x, conv1d_weight, conv1d_bias, None, True)
+        conv1d_out = causal_conv1d_cuda.causal_conv1d_fwd(
+            x, conv1d_weight, conv1d_bias, None, None, None, True
+        )
         # We're being very careful here about the layout, to avoid extra transposes.
         # We want delta to have d as the slowest moving dimension
         # and L as the fastest moving dimension, since those are what the ssm_scan kernel expects.
@@ -237,6 +239,7 @@ class MambaInnerFn(torch.autograd.Function):
     @custom_bwd
     def backward(ctx, dout):
         # dout: (batch, seqlen, dim)
+        assert causal_conv1d_cuda is not None, "causal_conv1d_cuda is not available. Please install causal-conv1d."
         (xz, conv1d_weight, conv1d_bias, x_dbl, x_proj_weight, delta_proj_weight, out_proj_weight,
          conv1d_out, delta, A, B, C, D, delta_bias, scan_intermediates, out) = ctx.saved_tensors
         L = xz.shape[-1]
@@ -246,7 +249,9 @@ class MambaInnerFn(torch.autograd.Function):
         if dout.stride(-1) != 1:
             dout = dout.contiguous()
         if ctx.checkpoint_lvl == 1:
-            conv1d_out = causal_conv1d_cuda.causal_conv1d_fwd(x, conv1d_weight, conv1d_bias, None, True)
+            conv1d_out = causal_conv1d_cuda.causal_conv1d_fwd(
+                x, conv1d_weight, conv1d_bias, None, None, None, True
+            )
             delta = rearrange(delta_proj_weight @ x_dbl[:, :delta_rank].t(),
                               "d (b l) -> b d l", l = L)
         # The kernel supports passing in a pre-allocated dz (e.g., in case we want to fuse the
@@ -291,8 +296,8 @@ class MambaInnerFn(torch.autograd.Function):
         dconv1d_out = rearrange(dconv1d_out, "d (b l) -> b d l", b=x.shape[0], l=x.shape[-1])
         # The kernel supports passing in a pre-allocated dx (e.g., in case we want to fuse the
         # backward of conv1d with the backward of chunk).
-        dx, dconv1d_weight, dconv1d_bias = causal_conv1d_cuda.causal_conv1d_bwd(
-            x, conv1d_weight, conv1d_bias, dconv1d_out, None, dx, True
+        dx, dconv1d_weight, dconv1d_bias, *_ = causal_conv1d_cuda.causal_conv1d_bwd(
+            x, conv1d_weight, conv1d_bias, dconv1d_out, None, None, None, dx, False, True
         )
         dconv1d_bias = dconv1d_bias if conv1d_bias is not None else None
         dconv1d_weight = rearrange(dconv1d_weight, "d w -> d 1 w")
@@ -320,11 +325,12 @@ def mamba_inner_ref(
     A, B=None, C=None, D=None, delta_bias=None, B_proj_bias=None,
     C_proj_bias=None, delta_softplus=True
 ):
+    assert causal_conv1d_fn is not None, "causal_conv1d_fn is not available. Please install causal-conv1d."
     L = xz.shape[-1]
     delta_rank = delta_proj_weight.shape[1]
     d_state = A.shape[-1] * (1 if not A.is_complex() else 2)
     x, z = xz.chunk(2, dim=1)
-    x = causal_conv1d_fn(x, rearrange(conv1d_weight, "d 1 w -> d w"), conv1d_bias, "silu")
+    x = causal_conv1d_fn(x, rearrange(conv1d_weight, "d 1 w -> d w"), conv1d_bias, activation="silu")
     # We're being very careful here about the layout, to avoid extra transposes.
     # We want delta to have d as the slowest moving dimension
     # and L as the fastest moving dimension, since those are what the ssm_scan kernel expects.
