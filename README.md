@@ -45,7 +45,7 @@ pip install -e .
 
 ## Pretrained Checkpoints
 
-We are releasing the following checkpoints for research, trained at the 360M and 1.3B parameter scales. Each checkpoint is trained on the same 10B tokens of the Pile corpus, using the same data order. The checkpoints are trained using the same code and infrastructure.  
+We are releasing the following checkpoints for research, trained at the 360M and 1.3B parameter scales. Each checkpoint is trained on the same 10B tokens of the Pile corpus, using the same data order. The checkpoints are trained using the same code and infrastructure. A quick start notebook is provided at ```notebooks/03-24-quick-start.ipynb``` and further details are below:
 
 Use the code below to load the Based checkpoints:
 ```python  
