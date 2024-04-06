@@ -127,6 +127,7 @@ class LinearAttention(nn.Module):
                 return self.recurrent_forward(hidden_states, kv_state, k_state, q, k, v)
             else:  # prefill
                 y = self.parallel_forward(hidden_states, q, k, v)
+                q, k = self.feature_map(q), self.feature_map(k)
                 kv_state = torch.einsum("bhnd,bhnf->bhfd", k, v)[:, :, None]
                 k_state = k.sum(dim=2)[:, :, None, None]
                 if self.layer_idx in inference_params.key_value_memory_dict:
