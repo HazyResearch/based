@@ -96,7 +96,11 @@ def _hedgehog_step(
     
     # compute output
     num = tl.sum(kv_state * Q[None, :], axis=1)
+
+    # if use norm
     den = tl.sum(k_state  * Q[None, :], axis=1) + 1e-12
     out = num / den
+    # else
+    # out = num
 
     tl.store(out_ptrs, out, mask=offs_m < dim)

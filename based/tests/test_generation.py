@@ -59,6 +59,7 @@ CONFIGS = {
                 "feature_dim": 128,
                 "use_triton": True,
                 "use_fast_transformers": False
+                "use_norm": True,
             }, **BASE_CONFIG
         }
     ),

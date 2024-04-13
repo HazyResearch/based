@@ -222,6 +222,7 @@ class Hedgehog(nn.Module):
             zero_init: bool = False, 
             bias: bool = False, 
             use_triton: bool = False,
+            use_norm: bool = True,
             use_fast_transformers: bool = False,
             dtype: torch.dtype = torch.float32,
             layer_idx: int = None,
@@ -244,6 +245,7 @@ class Hedgehog(nn.Module):
         
         self.use_triton = use_triton
         self.use_fast_transformers = use_fast_transformers
+        self.use_norm = use_norm
 
         layer_kwargs = {
             'num_heads': self.num_heads,
@@ -329,12 +331,13 @@ class Hedgehog(nn.Module):
                 num_warps=num_warps,
                 num_stages=num_stages
             )
-            o = o / (z[..., None] + self.eps)
+            if self.use_norm:
+                o = o / (z[..., None] + self.eps)
             
         else:
             print(f"PyTorch Prefill")
             # compute linear attention
-            if 0: #causal_dot_product is not None and self.use_fast_transformers:
+            if causal_dot_product is not None and self.use_fast_transformers:
                 o = causal_dot_product(
                     q.contiguous().to(dtype=torch.float32), 
                     k.contiguous().to(dtype=torch.float32),
@@ -356,7 +359,8 @@ class Hedgehog(nn.Module):
                 o = (q * (k * v).cumsum(dim=2)).sum(dim=-1)
                 
                 z = (q * k.cumsum(dim=2)).sum(dim=-1) + self.eps
-                o = o / z
+                if self.use_norm:
+                    o = o / z
             
         y = rearrange(o, 'b h l d -> b l (h d)')
         return self.out_proj(y.to(q.dtype))
@@ -391,7 +395,10 @@ class Hedgehog(nn.Module):
 
             # Compute linear attention
             num = (q * kv_state).sum(dim=-1)
-            y = num / ((q * k_state).sum(dim=-1) + self.eps)
+            if self.use_norm:
+                y = num / ((q * k_state).sum(dim=-1) + self.eps)
+            else:
+                y = num
 
         y = rearrange(y, 'b h l d -> b l (h d)').to(q.dtype)
         o = self.out_proj(y)
