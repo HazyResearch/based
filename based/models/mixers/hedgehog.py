@@ -283,6 +283,8 @@ class Hedgehog(nn.Module):
         q, k = self.feature_map_q(q), self.feature_map_k(k)
             
         # compute causal dot product
+        # if hidden_states.shape[1] > 16: use_triton = False
+        # print(f"Using Triton: {self.use_triton} and use_triton: {use_triton}")
         if self.use_triton:        
             # below is the pytorch equiv of the triton kernel
             # in terms of style of computation 
@@ -314,7 +316,7 @@ class Hedgehog(nn.Module):
             grid = (NK * NV, triton.cdiv(q.size(2), BS_q_n), q.size(0) * q.size(1))
             
             scale = 1.0
-            dt = torch.float32 #hidden_states.dtype
+            dt = hidden_states.dtype
             parallel_based_fwd_kernel_hedgehog[grid](
                 q.to(dt), k.to(dt), v.to(dt), o.to(dt), z.to(dt),
                 q.stride(1), q.stride(2), q.stride(3),
@@ -384,7 +386,7 @@ class Hedgehog(nn.Module):
         num = (q * kv_state).sum(dim=-1)
 
         if self.use_norm:
-            y = num / ((q * k_state).sum(dim=-1) + 1e-6)
+            y = num / ((q * k_state).sum(dim=-1) + self.eps)
         else:
             y = num
 
