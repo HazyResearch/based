@@ -149,8 +149,11 @@ def test_generation(
     n_generated_tokens = 64
     device = "cuda"
 
+    # Model that uses Triton kernels
+    config.mixer['use_triton'] = True
     model = GPTLMHeadModel(config).to(device=device, dtype=dtype)
 
+    # Model that uses PyTorch
     config_ref = config 
     config_ref.mixer['use_triton'] = False
     model_ref = GPTLMHeadModel(config_ref).to(device=device, dtype=dtype)
@@ -162,18 +165,16 @@ def test_generation(
     input_ids = torch.randint(1, 1000, (batch_size, prefill_size), dtype=torch.long, device=device)
 
     # fn = model.generate # model.generate_naive if naive_generation else 
-    # with torch.autocast(device_type="cuda", dtype=torch.bfloat16):
-    if 1:
-        with torch.no_grad():
-            output = model.generate(
-                input_ids=input_ids, 
-                max_length=prefill_size + n_generated_tokens, 
-                return_dict_in_generate=True, 
-                output_scores=True, 
-                eos_token_id=None,  # ensure this is None so that we test full output length
-                top_k=1, # enforces that we take the top token
-                cg=cache_graph 
-            )
+    with torch.no_grad():
+        output = model.generate(
+            input_ids=input_ids, 
+            max_length=prefill_size + n_generated_tokens, 
+            return_dict_in_generate=True, 
+            output_scores=True, 
+            eos_token_id=None,  # ensure this is None so that we test full output length
+            top_k=1, # enforces that we take the top token
+            cg=cache_graph 
+        )
     print("done with generation")
 
     # SE: need to clone because of "RuntimeError: Inference tensors cannot be saved for 
@@ -191,12 +192,9 @@ def test_generation(
     # get reference output by repeatedly using the parallel view of the model
     # (e.g. with a transformer this is like generating without a kv cache)
     for i in range(n_generated_tokens):
-        if 1:
-        # with torch.autocast(device_type="cuda", dtype=torch.bfloat16):
-            with torch.no_grad():
-                scores_ref = model_ref(input_ids=out[:, :prefill_size + i].clone()).logits
-                out_ref = scores_ref.argmax(dim=-1)
-
+        with torch.no_grad():
+            scores_ref = model_ref(input_ids=out[:, :prefill_size + i].clone()).logits
+            out_ref = scores_ref.argmax(dim=-1)
         diff_ref = (scores_ref[:, -1] - scores[:, i]).abs().max().item()
         diff_out = (out[:, prefill_size + i] - out_ref[:, -1]).abs().max().item()
         print(f"{i}: diff_ref={diff_ref}, diff_out={diff_out}")
@@ -209,7 +207,7 @@ def test_generation(
 if __name__ == "__main__":
     test_generation(
         config="hedgehog", 
-        prefill_size=16, 
+        prefill_size=1, 
         cache_graph=False, 
         naive_generation=False, 
         dtype=torch.float32

@@ -10,7 +10,8 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
 from based.generation import InferenceParams
-from .fwd_tri import parallel_based_fwd_kernel_hedgehog
+from .hedgehog_utils.fwd_tri import parallel_based_fwd_kernel_hedgehog
+from .hedgehog_utils.triton_state_update import hedgehog_step
 
 # import fast transformers kernel
 try:
@@ -243,8 +244,6 @@ class Hedgehog(nn.Module):
         
         self.use_triton = use_triton
         self.use_fast_transformers = use_fast_transformers
-        self.use_scale = True
-        self.use_norm = False
 
         layer_kwargs = {
             'num_heads': self.num_heads,
@@ -278,14 +277,13 @@ class Hedgehog(nn.Module):
         self.out_proj = nn.Linear(self.num_heads * self.head_dim, self.input_dim, bias=False)
     
 
-    def parallel_forward(self, hidden_states, q, k, v):
+    def parallel_forward(self, q, k, v):
         # feature map
         q, k = self.feature_map_q(q), self.feature_map_k(k)
             
         # compute causal dot product
-        # if hidden_states.shape[1] > 16: use_triton = False
-        # print(f"Using Triton: {self.use_triton} and use_triton: {use_triton}")
-        if self.use_triton:        
+        if self.use_triton:  
+            print("Triton Prefill")      
             # below is the pytorch equiv of the triton kernel
             # in terms of style of computation 
 
@@ -316,7 +314,7 @@ class Hedgehog(nn.Module):
             grid = (NK * NV, triton.cdiv(q.size(2), BS_q_n), q.size(0) * q.size(1))
             
             scale = 1.0
-            dt = hidden_states.dtype
+            dt = q.dtype
             parallel_based_fwd_kernel_hedgehog[grid](
                 q.to(dt), k.to(dt), v.to(dt), o.to(dt), z.to(dt),
                 q.stride(1), q.stride(2), q.stride(3),
@@ -331,14 +329,12 @@ class Hedgehog(nn.Module):
                 num_warps=num_warps,
                 num_stages=num_stages
             )
-            
-            if self.use_norm:
-                o = o / (z[..., None] + self.eps)
+            o = o / (z[..., None] + self.eps)
             
         else:
-
+            print(f"PyTorch Prefill")
             # compute linear attention
-            if causal_dot_product is not None and self.use_fast_transformers:
+            if 0: #causal_dot_product is not None and self.use_fast_transformers:
                 o = causal_dot_product(
                     q.contiguous().to(dtype=torch.float32), 
                     k.contiguous().to(dtype=torch.float32),
@@ -351,8 +347,7 @@ class Hedgehog(nn.Module):
                         k.to(dtype=torch.float32).cumsum(2)
                     ) + self.eps
                 )
-                if self.use_norm:
-                    o = o * z[..., None]
+                o = o * z[..., None]
 
             else:
                 scale = 1.0
@@ -360,38 +355,47 @@ class Hedgehog(nn.Module):
                 q, k, v = q.unsqueeze(-2), k.unsqueeze(-2), v.unsqueeze(-1)
                 o = (q * (k * v).cumsum(dim=2)).sum(dim=-1)
                 
-                # apply normalization
-                if self.use_norm:
-                    z = (q * k.cumsum(dim=2)).sum(dim=-1) + self.eps
-                    o = o / z
+                z = (q * k.cumsum(dim=2)).sum(dim=-1) + self.eps
+                o = o / z
             
         y = rearrange(o, 'b h l d -> b l (h d)')
-        return self.out_proj(y.to(hidden_states.dtype))
+        return self.out_proj(y.to(q.dtype))
 
 
-    def recurrent_forward(self, hidden_states, kv_state, k_state, q, k, v):
+    # (kv_state, k_state, q, k, v, denom: bool=False)
+    def recurrent_forward(self, kv_state, k_state, q, k, v):
         """
         Compute linear attention with recurrent view
         -> Assume q.shape is (b, h, 1, d); k and v.shape are (b, h, l, d)
         """
         b, h, l, d = q.shape
         assert l == 1, f'q.shape is {q.shape} but should be ({b}, {h}, 1, {d})'
-        # Expand dims for broadcasting to compute linear attention
-        q, k, v = q.unsqueeze(-2), k.unsqueeze(-2), v.unsqueeze(-1)
 
-        kv_state += k[:, :, -1:] * v[:, :, -1:]
-        k_state  += k[:, :, -1:]
-
-        # Compute linear attention
-        num = (q * kv_state).sum(dim=-1)
-
-        if self.use_norm:
-            y = num / ((q * k_state).sum(dim=-1) + self.eps)
+        if self.use_triton:
+            print(f"Triton recurrent")
+            # assert self.use_norm == True, "Triton only supports normalization"
+            y = hedgehog_step(
+                kv_state.view(-1, kv_state.shape[-2], kv_state.shape[-1]), 
+                k_state.view(-1, k_state.shape[-1]),
+                q=q.view(-1, q.shape[-1]), 
+                k=k.view(-1, k.shape[-1]), 
+                v=v.view(-1, v.shape[-1]),
+            )
+            y = y.view(kv_state.shape[0], kv_state.shape[1], 1, v.shape[-1])
         else:
-            y = num
+            print(f"PyTorch recurrent")
+            # Expand dims for broadcasting to compute linear attention
+            q, k, v = q.unsqueeze(-2), k.unsqueeze(-2), v.unsqueeze(-1)
+            kv_state += k[:, :, -1:] * v[:, :, -1:]
+            k_state  += k[:, :, -1:]
+
+            # Compute linear attention
+            num = (q * kv_state).sum(dim=-1)
+            y = num / ((q * k_state).sum(dim=-1) + self.eps)
 
         y = rearrange(y, 'b h l d -> b l (h d)').to(q.dtype)
-        return self.out_proj(y)
+        o = self.out_proj(y)
+        return o
 
 
     def forward(
@@ -412,15 +416,15 @@ class Hedgehog(nn.Module):
         v = v.view(b, l, self.num_heads, self.head_dim).transpose(1, 2)
 
         if inference_params is None:
-            return self.parallel_forward(hidden_states, q, k, v)
+            return self.parallel_forward(q, k, v)
         else:
             # check if we are doing prefill or generation
             if inference_params.seqlen_offset > 0: # recurrent
                 kv_state, k_state = self._get_inference_cache(inference_params)
                 q, k = self.feature_map_q(q), self.feature_map_k(k)
-                return self.recurrent_forward(hidden_states, kv_state, k_state, q, k, v)
+                return self.recurrent_forward(kv_state, k_state, q, k, v)
             else:
-                y = self.parallel_forward(hidden_states, q, k, v)
+                y = self.parallel_forward(q, k, v)
                 q, k = self.feature_map_q(q), self.feature_map_k(k)
                 kv_state = torch.einsum("bhnd,bhnf->bhfd", k, v)[:, :, None]
                 k_state = k.sum(dim=2)[:, :, None, None]
