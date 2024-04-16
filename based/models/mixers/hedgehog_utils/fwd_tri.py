@@ -7,7 +7,7 @@ from torch.cuda.amp import custom_bwd, custom_fwd
 @triton.jit
 def parallel_based_fwd_kernel_hedgehog(
     q,  # query [B, H, N, D]
-    k,  # key [B, H, N, DV]
+    k,  # key [B, H, N, D]
     v,  # value [B, H, N, DV]
     o,  # output [B, H, N, DV]
     z,  # normalizer [B, H, N]
