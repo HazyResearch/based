@@ -41,7 +41,6 @@ class FeatureMap(nn.Module):
         """
         return x
 
-   
 class TaylorExp(FeatureMap):
     """
     Feature map to compute 2nd-order Taylor approx. of exp(q^T k / sqrt(d))
@@ -146,10 +145,10 @@ class LinearAttention(nn.Module):
             try:
                 A_qk = torch.tril(A_qk)       
             except:
-                # tril struggles with certain data types
-                b, l = A_qk.shape[:2]
-                cumsum_matrix = torch.tril(torch.ones((l, l)), diagonal=-1).to(x.device)
-                A_qk = A_qk * cumsum_matrix[None, :, :, None]
+                # tril is incompatible with certain data types
+                b, h, l, l = A_qk.shape
+                cumsum_matrix = torch.tril(torch.ones((l, l))).to(q.device, q.dtype)
+                A_qk = A_qk * cumsum_matrix
             y = torch.einsum("bhnm,bhme->bhne", A_qk.to(x.dtype), v.to(x.dtype))
             z = 1 / (torch.einsum("bhld,bhld->bhl", q, k.cumsum(2)) + self.eps)
             y = y * z[..., None]
