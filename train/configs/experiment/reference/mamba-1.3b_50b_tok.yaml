@@ -1,0 +1,53 @@
+# @package _global_
+defaults:
+  - /experiment/pile/gpt3m-flash.yaml
+  - override /model: mamba
+
+train: 
+  optimizer:
+    lr: 0.0008
+    betas: [0.9, 0.95]
+    _target_: apex.optimizers.FusedAdam
+    adam_w_mode: true
+    weight_decay: 0.1
+  
+  scheduler: 
+    lr_min: 0.00008
+    _target_: train.optim.timm_lr_scheduler.TimmCosineLRScheduler
+    warmup_t: 1000
+    t_initial: 99000
+    t_in_epochs: false
+    warmup_prefix: true
+    warmup_lr_init: 0.000001
+
+expt_name: mamba-1b-50b-tokens
+name: ${.expt_name}
+
+callbacks:
+  model_checkpoint:
+    dirpath: /var/cr05_data/sim_data/checkpoints/${expt_name}
+
+
+trainer: 
+  # this interval is in terms of batch_idx not in terms of global_step, so we need 
+  # to multiply by accumulate_grad_batches
+  val_check_interval: ${eval:1000 * ${.accumulate_grad_batches}}
+  max_steps: 100000
+
+datamodule:
+  _target_: train.datamodules.language_modeling_neox.NeoxLMDataModule   
+  batch_size: 8  # per gpu
+  batch_size_eval: 8
+  num_predict_batches_eval: 100
+  global_batch_size: ${..train.global_batch_size}
+  max_steps: ${..trainer.max_steps}
+  num_test_samples: 1000
+  num_valid_samples: 1000
+
+model:
+  config:
+    d_model: 2048
+    n_layer: 46
+    rms_norm: true
+    residual_in_fp32: true
+    pad_vocab_size_multiple: 16

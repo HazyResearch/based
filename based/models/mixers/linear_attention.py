@@ -40,7 +40,8 @@ class FeatureMap(nn.Module):
         Assume x.shape is (batch_size, n_heads, seq_len, head_dim)
         """
         return x
-    
+
+   
 class TaylorExp(FeatureMap):
     """
     Feature map to compute 2nd-order Taylor approx. of exp(q^T k / sqrt(d))
@@ -142,7 +143,13 @@ class LinearAttention(nn.Module):
         if self.parallel_implementation == "quadratic":
             q, k = self.feature_map(q), self.feature_map(k)
             A_qk = torch.einsum("bhnd,bhmd->bhnm", q, k) 
-            A_qk = torch.tril(A_qk)        
+            try:
+                A_qk = torch.tril(A_qk)       
+            except:
+                # tril struggles with certain data types
+                b, l = A_qk.shape[:2]
+                cumsum_matrix = torch.tril(torch.ones((l, l)), diagonal=-1).to(x.device)
+                A_qk = A_qk * cumsum_matrix[None, :, :, None]
             y = torch.einsum("bhnm,bhme->bhne", A_qk.to(x.dtype), v.to(x.dtype))
             z = 1 / (torch.einsum("bhld,bhld->bhl", q, k.cumsum(2)) + self.eps)
             y = y * z[..., None]
@@ -198,7 +205,11 @@ class LinearAttention(nn.Module):
 
         # Compute linear attention
         num = (q * kv_state).sum(dim=-1)
-        y = num / ((q * k_state).sum(dim=-1) + self.eps)
+        if 'fla' in self.parallel_implementation: 
+            eps = 1e-6 # this code uses an alternate eps
+        else: 
+            eps = 1e-12
+        y = num / ((q * k_state).sum(dim=-1) + eps)
 
         y = rearrange(y, 'b h l d -> b l (h d)').to(q.dtype)
         return self.out_proj(y)
