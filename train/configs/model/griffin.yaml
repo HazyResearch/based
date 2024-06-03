@@ -1,0 +1,9 @@
+defaults:
+  - _self_
+  - gpt2model: gpt2-small
+
+_target_: based.models.griffin.Griffin
+_recursive_: True
+config:
+  _target_: based.models.griffin_utils.utils.GriffinConfig
+
