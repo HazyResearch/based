@@ -295,7 +295,6 @@ class Hedgehog(nn.Module):
             # o = torch.einsum("bhnm,bhme->bhne", A_qk, v)
 
             o = torch.empty_like(v)
-            z = torch.empty(q.size(0), q.size(1), q.size(2), dtype=q.dtype, device=q.device)
             
             BS_q_n = 128
             BS_kv_n = 32
@@ -318,7 +317,7 @@ class Hedgehog(nn.Module):
             scale = 1.0
             dt = q.dtype
             parallel_based_fwd_kernel_hedgehog[grid](
-                q.to(dt), k.to(dt), v.to(dt), o.to(dt), z.to(dt),
+                q.to(dt), k.to(dt), v.to(dt), o.to(dt),
                 q.stride(1), q.stride(2), q.stride(3),
                 v.stride(1), v.stride(2), v.stride(3),
                 q.size(0), q.size(1), q.size(2),
@@ -331,8 +330,12 @@ class Hedgehog(nn.Module):
                 num_warps=num_warps,
                 num_stages=num_stages
             )
+            
             if self.use_norm:
-                o = o / (z[..., None] + self.eps)
+                q, k = q.unsqueeze(-2), k.unsqueeze(-2)
+                z = (q * k.cumsum(dim=2)).sum(dim=-1) + self.eps
+                
+                o = o / z
             
         else:
             print(f"PyTorch Prefill")
