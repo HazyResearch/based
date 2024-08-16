@@ -19,12 +19,11 @@ Based is an efficient architecture inspired by recovering attention-like capabil
 1. Short sliding window attention (e.g., window size 64), to model fine-grained local dependencies
 2. "Dense" and global *linear* attention, to model long-range dependencies
 
-In this way, we aim to capture the same dependencies as Transformers in a 100% subquadratic model, with *exact* softmax attention locally and a softmax-approximating linear attention for all other tokens. We find this helps close many of the performance gaps between Transformers and other sub-quadratic architecture proposals (matching perplexity is not all you need?).
+In this way, we aim to capture the same dependencies as Transformers in a 100% subquadratic model, with *exact* softmax attention locally and a softmax-approximating linear attention for all other tokens. 
 
-## Releases
-- In this repo, please find code to (1) train new Based models and (2) evaluate existing Based checkpoints on downstream tasks.
-- *New* [Demo pretrained Based models with ThunderKittens CUDA kernels](https://github.com/HazyResearch/ThunderKittens/tree/main/demos/based_demo) to bo brrrr!!!
+We find this helps close many of the performance gaps between Transformers and recent subquadratic alternatives (matching perplexity is not all you need? [[1](https://arxiv.org/abs/2312.04927), [2](https://arxiv.org/abs/2402.01032), [3](https://arxiv.org/abs/2402.04248)]).
 
+In this repo, please find code to (1) train new models and (2) evaluate existing checkpoints on downstream tasks.
 
 ## Installation
 
@@ -233,20 +232,17 @@ The code for reproducing these figures is provided in a separate repository: [Ha
 python -m zoology.launch zoology/experiments/arxiv24_based_figure2/configs.py -p
 ```
 
+
 ## Benchmarking and Efficiency
 
-Try out Based models with speedy ThunderKittens kernels!
-```
-git submodule init
-git submodule update 
-cd ThunderKittens/demos/based_demos
-```
-Enjoy!
+We include the kernels evaluated in the Based paper under ```based/benchmarking/```. We provide additional details on the CUDA releases in the README in this folder. Stay tuned!
+
 
 ## Citation and Acknowledgements
 
 This repo contains work based on the following papers. Please consider citing if you found the work or code useful:
 ```
+# Based
 @article{arora2024simple,
   title={Simple linear attention language models balance the recall-throughput tradeoff},
   author={Arora, Simran and Eyuboglu, Sabri and Zhang, Michael and Timalsina, Aman and Alberti, Silas and Zinsley, Dylan and Zou, James and Rudra, Atri and Ré, Christopher},
@@ -254,6 +250,7 @@ This repo contains work based on the following papers. Please consider citing if
   year={2024}
 }
 
+# Hedgehog (Linear attention)
 @article{zhang2024hedgehog,
   title={The Hedgehog \& the Porcupine: Expressive Linear Attentions with Softmax Mimicry},
   author={Zhang, Michael and Bhatia, Kush and Kumbong, Hermann and R{\'e}, Christopher},
@@ -261,6 +258,7 @@ This repo contains work based on the following papers. Please consider citing if
   year={2024}
 }
 
+# Zoology (BaseConv, Synthetics, Recall Problem)
 @article{arora2023zoology,
   title={Zoology: Measuring and Improving Recall in Efficient Language Models},
   author={Arora, Simran and Eyuboglu, Sabri and Timalsina, Aman and Johnson, Isys and Poli, Michael and Zou, James and Rudra, Atri and Ré, Christopher},
