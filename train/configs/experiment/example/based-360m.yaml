@@ -95,14 +95,14 @@ model:
     resid_pdrop: 0
     mlp_fc1_bias: false
     mlp_fc2_bias: false
-    fused_bias_fc: true
+    fused_bias_fc: false
     out_proj_bias: false
     qkv_proj_bias: false
     use_flash_attn: true
     residual_in_fp32: true
     activation_function: "swiglu"    
     rotary_emb_fraction: 1           # flagging 
-    fused_dropout_add_ln: true
+    fused_dropout_add_ln: false
     max_position_embeddings: 0   # flagging 
     pad_vocab_size_multiple: 8
     reorder_and_upcast_attn: false
