@@ -28,10 +28,10 @@ trainer:
 
 
 datamodule:
-  batch_size: 8  # per gpu
-  batch_size_eval: 32
+  batch_size: 2  # per gpu
+  batch_size_eval: 2
 
-expt_name: 02-20-based-360m
+expt_name: cylon-rope-360m
 name: ${.expt_name}
 
 callbacks:
@@ -39,48 +39,24 @@ callbacks:
     dirpath: /data/aaryan/cylon/checkpoints/${expt_name}
     # dirpath: /var/cr01_data/sabri_data/checkpoints/${expt_name}
 
-resume: True
+resume: False
 do_test: True
 
 model:
   _target_: based.models.gpt.GPTLMHeadModel
   _recursive_: false
   config:
-    alt_mixer_layers: 
-      - 1
-      - 6
-      - 11
-      - 16
-      - 21
-
-    alt_mixer_2_layers:
-      - 2
-      - 7
-      - 12
-      - 17
-      - 22
-
     mixer:
-      _target_: based.models.mixers.convolution.BaseConv
+      # _target_: based.models.mixers.convolution.BaseConv
+      # l_max: ${....datamodule.max_length}
+      # use_bias: True
+      # expand_proj: 4
+      # kernel_sizes: 3
+      _target_: based.models.mixers.cylon.LinearAttention
       l_max: ${....datamodule.max_length}
       use_bias: True
-      expand_proj: 4
-      kernel_sizes: 3
-    
-    alt_mixer: 
-      _target_: based.models.mixers.linear_attention.LinearAttention  
-      l_max: ${....datamodule.max_length}
-      feature_map: 
-        _target_: based.models.mixers.linear_attention.TaylorExp
-        input_dim: ${..feature_dim}
-      feature_dim: 16
       num_heads: 16
-
-    alt_mixer_2:
-      _target_: based.models.mixers.slide_attention.SlidingAttention
-      window_size: 128 
-      num_heads: 16
-      causal: true
+      seg_len: 256
 
     n_embd: 1024
 
@@ -102,7 +78,7 @@ model:
     use_flash_attn: true
     residual_in_fp32: true
     activation_function: "swiglu"    
-    rotary_emb_fraction: 1           # flagging 
+    rotary_emb_fraction: 0.5       
     fused_dropout_add_ln: false
     max_position_embeddings: 0   # flagging 
     pad_vocab_size_multiple: 8

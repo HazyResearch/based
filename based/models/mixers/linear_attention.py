@@ -108,8 +108,8 @@ class LinearAttention(nn.Module):
         **kwargs: any
     ):
         """
-        x (torch.Tensor): tensor of shape (b, d, l)
-        y (torch.Tensor): tensor of shape (b, d, l)
+        x (torch.Tensor): tensor of shape (b, l, d)
+        y (torch.Tensor): tensor of shape (b, l, d)
         """
         b, l, _ = hidden_states.size()
         q, k, v = self.proj_q(hidden_states), self.proj_k(hidden_states), self.proj_v(hidden_states)

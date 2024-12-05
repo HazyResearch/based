@@ -468,7 +468,7 @@ class MHA(nn.Module):
         if not self.cross_attn:
             self.Wqkv = wqkv_cls(embed_dim, qkv_dim, bias=qkv_proj_bias, **factory_kwargs)
         else:
-            self.Wq = linear_cls(embed_dim, embed_dim, bias=qkv_proj_bias, **factory_kwargs)
+            self.Wq  = linear_cls(embed_dim, embed_dim, bias=qkv_proj_bias, **factory_kwargs)
             self.Wkv = wqkv_cls(embed_dim, kv_dim, bias=qkv_proj_bias, **factory_kwargs)
         if self.dwconv:
             if self.num_heads_kv == self.num_heads:

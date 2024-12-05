@@ -648,7 +648,11 @@ class GPTModel(GPTPreTrainedModel):
             if self.process_group is not None and self.sequence_parallel
             else {}
         )
+        
+        assert input_ids is not None, "Input tensor input_ids is None"
         hidden_states = self.embeddings(input_ids, position_ids=position_ids, **embedding_kwargs)
+        assert hidden_states is not None, "Hidden states are None"
+        
         if self.parallel_block:
             hidden_states2 = None
         residual = None
@@ -666,10 +670,11 @@ class GPTModel(GPTPreTrainedModel):
             decay = self.decay()
         else:
             decay = None
-
+        
         for layer in self.layers:
             if self.prenorm:
                 layer_name = layer.mixer.__class__.__name__
+                assert hidden_states is not None, "Hidden states are None"
                 if not self.parallel_block and layer_name not in ['MHA']:
                     hidden_states, residual = layer(
                         hidden_states, residual=residual, position_ids=position_ids, decay=decay, mixer_kwargs=mixer_kwargs
@@ -680,21 +685,30 @@ class GPTModel(GPTPreTrainedModel):
                     hidden_states, hidden_states2, residual = layer(
                         hidden_states, hidden_states2, residual=residual, position_ids=position_ids, decay=decay, mixer_kwargs=mixer_kwargs
                     )
+                assert hidden_states is not None, "Hidden states are None"
             else:
+                assert hidden_states is not None, "Hidden states are None"
                 hidden_states = layer(hidden_states, position_ids=position_ids, mixer_kwargs=mixer_kwargs)
+                assert hidden_states is not None, "Hidden states are None"
         if self.prenorm:
             if not self.fused_dropout_add_ln:
+                assert hidden_states is not None, "Hidden states are None"
                 dropped = self.drop_f(hidden_states)
+                assert dropped is not None, "Dropped states are None"
                 if not self.parallel_block:
                     residual = (dropped + residual) if residual is not None else dropped
                 else:
+                    assert hidden_states2 is not None, "Hidden states2 are None"
                     dropped2 = self.drop_f(hidden_states2)
+                    assert dropped2 is not None, "Dropped states2 are None"
                     residual = (
                         (residual + dropped + dropped2)
                         if residual is not None
                         else dropped + dropped2
                     )
+                assert residual is not None, "Residual states are None"
                 hidden_states = self.ln_f(residual.to(dtype=self.ln_f.weight.dtype))
+                assert hidden_states is not None, "Hidden states are None"
             else:
                 # Set prenorm=False here since we don't need the residual
                 if not self.parallel_block:
@@ -703,6 +717,7 @@ class GPTModel(GPTPreTrainedModel):
                         if isinstance(self.ln_f, RMSNorm)
                         else dropout_add_layer_norm
                     )
+                    assert hidden_states is not None, "Hidden states are None"
                     hidden_states = fused_add_norm_fn(
                         hidden_states,
                         residual,
@@ -713,12 +728,14 @@ class GPTModel(GPTPreTrainedModel):
                         prenorm=False,
                         residual_in_fp32=self.residual_in_fp32,
                     )
+                    assert hidden_states is not None, "Hidden states are None"
                 else:
                     fused_add_norm_fn = (
                         dropout_add_rms_norm_parallel_residual
                         if isinstance(self.ln_f, RMSNorm)
                         else dropout_add_layer_norm_parallel_residual
                     )
+                    assert hidden_states is not None, "Hidden states are None"
                     hidden_states, _ = fused_add_norm_fn(
                         hidden_states,
                         hidden_states2,
@@ -732,6 +749,7 @@ class GPTModel(GPTPreTrainedModel):
                         prenorm=False,
                         residual_in_fp32=self.residual_in_fp32,
                     )
+                    assert hidden_states is not None, "Hidden states are None"
         return hidden_states
 
 
@@ -803,10 +821,14 @@ class GPTLMHeadModel(GPTPreTrainedModel, GenerationMixin, NaiveGenerationMixin):
             input_ids.ndim == 2
         ), f"Expected `input_ids` to have shape [b, slen], but got shape {input_ids.shape}"
         b, slen = input_ids.shape
+        
+        assert input_ids is not None, "Input tensor input_ids is None"
         hidden_states = self.transformer(
             input_ids, position_ids=position_ids, inference_params=inference_params,
             stream=stream
         )
+        assert hidden_states is not None, "Hidden states are None"
+        
         if inference_params is not None:
             assert hidden_states.ndim == 3, "sequence_parallel is not supported in generation mode"
         if num_last_tokens > 0:

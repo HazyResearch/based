@@ -181,7 +181,17 @@ class SequenceLMModel(SequenceModel):
             x, y, _ = batch
         else:
             x, y = batch
-        output = self.forward(x).logits
+        
+        assert x is not None, "Input tensor x is None"
+        
+        # breakpoint()
+        
+        fwd_output = self.forward(x)
+        assert fwd_output is not None, "Forward pass returned None"
+        assert hasattr(fwd_output, 'logits'), "Forward output has no logits attribute"
+        output = fwd_output.logits
+        assert output is not None, "Logits are None"
+
         output = rearrange(output, '... C -> (...) C')
         y = rearrange(y, '... -> (...)')
         loss = self.loss_fn(output, y) if is_train else self.loss_fn_val(output, y)

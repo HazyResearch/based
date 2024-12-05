@@ -185,10 +185,14 @@ class Block(nn.Module):
             
             if mixer_subset is not None:
                 mixer_kwargs["mixer_subset"] = mixer_subset
+            
+            assert hidden_states is not None, "Hidden states are None"
             if position_ids is not None or decay is not None:
                 hidden_states = self.mixer(hidden_states, position_ids=position_ids, decay=decay, **mixer_kwargs)
             else:
                 hidden_states = self.mixer(hidden_states, **mixer_kwargs)
+            assert hidden_states is not None, "Hidden states are None"
+ 
             if mixer_subset is not None:
                 residual = residual[:, mixer_subset]
             if not isinstance(self.mlp, nn.Identity):
