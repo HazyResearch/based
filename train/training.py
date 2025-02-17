@@ -170,7 +170,7 @@ def train(config: DictConfig) -> Optional[float]:
     if n_devices > 1 and config.trainer.get('strategy', None) is None:
         config.trainer.strategy = dict(
             _target_='pytorch_lightning.strategies.DDPStrategy',
-            find_unused_parameters=True,  # FLAG
+            find_unused_parameters=False,  # FLAG
             gradient_as_bucket_view=True,  # https://pytorch-lightning.readthedocs.io/en/stable/advanced/advanced_gpu.html#ddp-optimizations
         )
 

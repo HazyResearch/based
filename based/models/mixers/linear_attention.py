@@ -9,8 +9,6 @@ from einops import rearrange
 
 from based.generation import InferenceParams
 
-import sys
-sys.path.append("../../../")
 
 try:
     from train.csrc.causal_dot_prod import causal_dot_product  # linear attention cuda kernel
@@ -65,6 +63,7 @@ class TaylorExp(FeatureMap):
             [x[..., :1] ** 0, x / self.rrd, x2 / self.rd], 
             dim=-1
         )
+
 
 class LinearAttention(nn.Module):
     def __init__(
