@@ -1,5 +1,3 @@
-# Copyright (c) 2023, Tri Dao.
-
 import logging
 import math
 import re
@@ -8,6 +6,7 @@ from collections.abc import Sequence
 from functools import partial
 from typing import Dict, List
 
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -15,8 +14,7 @@ from einops import rearrange
 from transformers import GPT2Config
 import hydra
 
-from flash_attn.modules.block import Block, ParallelBlock
-from .block import Block, ParallelBlock
+from .block import Block
 from flash_attn.modules.embedding import GPT2Embeddings, ParallelGPT2Embeddings
 from flash_attn.modules.mha import MHA, ParallelMHA
 from flash_attn.modules.mlp import (
@@ -44,24 +42,7 @@ try:
 except ImportError:
     dropout_add_layer_norm = None
 
-try:
-    from flash_attn.ops.layer_norm import dropout_add_layer_norm_parallel_residual
-except ImportError:
-    dropout_add_layer_norm_parallel_residual = None
-
-try:
-    # from based.ops.triton.layer_norm import RMSNorm
-    # dropout_add_rms_norm = None
-    from flash_attn.ops.rms_norm import RMSNorm, dropout_add_rms_norm
-except ImportError:
-    RMSNorm, dropout_add_rms_norm = None, None
-# You can replace the above import with the following if you do not install the flash_attention kernel
-# from based.ops.triton.layer_norm import RMSNorm
-
-try:
-    from flash_attn.ops.rms_norm import dropout_add_rms_norm_parallel_residual
-except ImportError:
-    dropout_add_rms_norm_parallel_residual = None
+from based.ops.triton.layer_norm import RMSNorm
 
 try:
     from flash_attn.ops.triton.mlp import FusedDenseSqreluDense
@@ -74,7 +55,6 @@ logger = logging.getLogger(__name__)
 
 from based.utils.hf import load_config_hf, load_state_dict_hf
 
-
 class GPT2MixerConfig(GPT2Config):
     def __init__(self, *args, **kwargs):
         self.mixer = kwargs.pop("mixer", None)
@@ -83,7 +63,7 @@ class GPT2MixerConfig(GPT2Config):
 
 def create_mixer_cls(config, layer_idx=None, process_group=None, device=None, dtype=None):
     tag = 'mixer'
-    value = config.mixer
+    value = getattr(config, "mixer", None) 
     alt_mixer_layers = getattr(config, "alt_mixer_layers", None)
     alt_mixer_2_layers = getattr(config, "alt_mixer_2_layers", None)
     alt_mixer = getattr(config, "alt_mixer", None)
@@ -389,7 +369,7 @@ def create_block(config, layer_idx=None, process_group=None, device=None, dtype=
             prenorm=prenorm,
             resid_dropout1=resid_dropout1,
             resid_dropout2=config.resid_pdrop,
-            fused_dropout_add_ln=getattr(config, "fused_dropout_add_ln", False),
+            fused_dropout_add_ln=False, # getattr(config, "fused_dropout_add_ln", False),
             residual_in_fp32=residual_in_fp32,
             sequence_parallel=sequence_parallel and process_group is not None,
             mark_shared_params=process_group is not None,
@@ -405,7 +385,7 @@ def create_block(config, layer_idx=None, process_group=None, device=None, dtype=
             resid_dropout1=resid_dropout1,
             resid_dropout2=config.resid_pdrop,
             tied_norm=getattr(config, "parallel_block_tied_norm", False),
-            fused_dropout_add_ln=getattr(config, "fused_dropout_add_ln", False),
+            fused_dropout_add_ln=False, #getattr(config, "fused_dropout_add_ln", False),
             residual_in_fp32=residual_in_fp32,
             sequence_parallel=sequence_parallel and process_group is not None,
             mark_shared_params=process_group is not None,
@@ -589,7 +569,7 @@ class GPTModel(GPTPreTrainedModel):
                 for i in range(config.num_hidden_layers)
             ]
         )
-        self.fused_dropout_add_ln = getattr(config, "fused_dropout_add_ln", False)
+        self.fused_dropout_add_ln = False # getattr(config, "fused_dropout_add_ln", False)
         if self.fused_dropout_add_ln:
             if (not self.parallel_block and dropout_add_layer_norm is None) or (
                 self.parallel_block and dropout_add_layer_norm_parallel_residual is None
@@ -648,7 +628,11 @@ class GPTModel(GPTPreTrainedModel):
             if self.process_group is not None and self.sequence_parallel
             else {}
         )
+        
+        assert input_ids is not None, "Input tensor input_ids is None"
         hidden_states = self.embeddings(input_ids, position_ids=position_ids, **embedding_kwargs)
+        assert hidden_states is not None, "Hidden states are None"
+        
         if self.parallel_block:
             hidden_states2 = None
         residual = None
@@ -666,10 +650,14 @@ class GPTModel(GPTPreTrainedModel):
             decay = self.decay()
         else:
             decay = None
-
+        
         for layer in self.layers:
             if self.prenorm:
-                layer_name = layer.mixer.__class__.__name__
+                try:
+                    layer_name = layer.mixer.__class__.__name__
+                except:
+                    layer_name = "MHA"
+                assert hidden_states is not None, "Hidden states are None"
                 if not self.parallel_block and layer_name not in ['MHA']:
                     hidden_states, residual = layer(
                         hidden_states, residual=residual, position_ids=position_ids, decay=decay, mixer_kwargs=mixer_kwargs
@@ -680,21 +668,30 @@ class GPTModel(GPTPreTrainedModel):
                     hidden_states, hidden_states2, residual = layer(
                         hidden_states, hidden_states2, residual=residual, position_ids=position_ids, decay=decay, mixer_kwargs=mixer_kwargs
                     )
+                assert hidden_states is not None, "Hidden states are None"
             else:
+                assert hidden_states is not None, "Hidden states are None"
                 hidden_states = layer(hidden_states, position_ids=position_ids, mixer_kwargs=mixer_kwargs)
+                assert hidden_states is not None, "Hidden states are None"
         if self.prenorm:
             if not self.fused_dropout_add_ln:
+                assert hidden_states is not None, "Hidden states are None"
                 dropped = self.drop_f(hidden_states)
+                assert dropped is not None, "Dropped states are None"
                 if not self.parallel_block:
                     residual = (dropped + residual) if residual is not None else dropped
                 else:
+                    assert hidden_states2 is not None, "Hidden states2 are None"
                     dropped2 = self.drop_f(hidden_states2)
+                    assert dropped2 is not None, "Dropped states2 are None"
                     residual = (
                         (residual + dropped + dropped2)
                         if residual is not None
                         else dropped + dropped2
                     )
+                assert residual is not None, "Residual states are None"
                 hidden_states = self.ln_f(residual.to(dtype=self.ln_f.weight.dtype))
+                assert hidden_states is not None, "Hidden states are None"
             else:
                 # Set prenorm=False here since we don't need the residual
                 if not self.parallel_block:
@@ -703,6 +700,7 @@ class GPTModel(GPTPreTrainedModel):
                         if isinstance(self.ln_f, RMSNorm)
                         else dropout_add_layer_norm
                     )
+                    assert hidden_states is not None, "Hidden states are None"
                     hidden_states = fused_add_norm_fn(
                         hidden_states,
                         residual,
@@ -713,12 +711,14 @@ class GPTModel(GPTPreTrainedModel):
                         prenorm=False,
                         residual_in_fp32=self.residual_in_fp32,
                     )
+                    assert hidden_states is not None, "Hidden states are None"
                 else:
                     fused_add_norm_fn = (
                         dropout_add_rms_norm_parallel_residual
                         if isinstance(self.ln_f, RMSNorm)
                         else dropout_add_layer_norm_parallel_residual
                     )
+                    assert hidden_states is not None, "Hidden states are None"
                     hidden_states, _ = fused_add_norm_fn(
                         hidden_states,
                         hidden_states2,
@@ -732,6 +732,7 @@ class GPTModel(GPTPreTrainedModel):
                         prenorm=False,
                         residual_in_fp32=self.residual_in_fp32,
                     )
+                    assert hidden_states is not None, "Hidden states are None"
         return hidden_states
 
 
@@ -803,10 +804,14 @@ class GPTLMHeadModel(GPTPreTrainedModel, GenerationMixin, NaiveGenerationMixin):
             input_ids.ndim == 2
         ), f"Expected `input_ids` to have shape [b, slen], but got shape {input_ids.shape}"
         b, slen = input_ids.shape
+        
+        assert input_ids is not None, "Input tensor input_ids is None"
         hidden_states = self.transformer(
             input_ids, position_ids=position_ids, inference_params=inference_params,
             stream=stream
         )
+        assert hidden_states is not None, "Hidden states are None"
+        
         if inference_params is not None:
             assert hidden_states.ndim == 3, "sequence_parallel is not supported in generation mode"
         if num_last_tokens > 0:
@@ -846,389 +851,3 @@ class GPTLMHeadModel(GPTPreTrainedModel, GenerationMixin, NaiveGenerationMixin):
             state_dict[f"transformer.layers.0.norm1.weight"] = ln_weight
             state_dict[f"transformer.layers.0.norm1.bias"] = ln_bias
         return super().load_state_dict(state_dict, strict=strict)
-
-
-def shard_state_dict_tp(state_dict, config, world_size, rank):
-    """Convert the state_dict of a standard GPT model to the state_dict of a GPT model
-    with tensor parallel.
-
-    This function modifies state_dict in place.
-    """
-    pad_vocab_size_multiple = getattr(config, "pad_vocab_size_multiple", 1)
-    vocab_size = math.ceil(config.vocab_size / pad_vocab_size_multiple) * pad_vocab_size_multiple
-    assert vocab_size % world_size == 0
-    assert config.hidden_size % world_size == 0
-    inner_dim = config.n_inner if config.n_inner is not None else 4 * config.hidden_size
-    # print(f"inner_dim: {inner_dim}")
-    assert inner_dim % world_size == 0
-
-    n_head = config.n_head
-    n_head_kv = getattr(config, "n_head_kv", n_head)
-
-    embed_dim = config.hidden_size
-    head_dim = embed_dim // n_head
-
-    def shard_first_dim(state_dict, key):
-        if key in state_dict:
-            x = state_dict[key]
-            dim = x.shape[0] // world_size
-            state_dict[key] = x[rank * dim : (rank + 1) * dim]
-
-    def shard_last_dim(state_dict, key, multiple_of=1):
-        if key in state_dict:
-            x = state_dict[key]
-            dim_each_rank = [
-                get_dim_for_local_rank(x.size(-1), world_size, local_rank, multiple_of)
-                for local_rank in range(world_size)
-            ]
-            beg, end = tuple(sum(dim_each_rank[:pos]) for pos in (rank, rank + 1))
-            state_dict[key] = x[..., beg:end]
-
-    def shard_gatedmlp_fc1_dim(state_dict, key):
-        if key in state_dict:
-            x = state_dict[key]
-            dim = x.shape[0] // world_size // 2
-            state_dict[key] = rearrange(
-                rearrange(x, "(two o) ... -> two o ...", two=2)[:, rank * dim : (rank + 1) * dim],
-                "two o ... -> (two o) ...",
-            )
-
-    def shard_qkv_headdim(state_dict, key):
-        if key in state_dict:
-            n_head_each_rank = [
-                get_dim_for_local_rank(n_head, world_size, local_rank)
-                for local_rank in range(world_size)
-            ]
-            n_head_kv_each_rank = [
-                get_dim_for_local_rank(n_head_kv, world_size, local_rank)
-                for local_rank in range(world_size)
-            ]
-
-            beg_n_head = sum(n_head_each_rank[:rank])
-            end_n_head = sum(n_head_each_rank[: rank + 1])
-
-            beg_n_head_kv = sum(n_head_kv_each_rank[:rank])
-            end_n_head_kv = sum(n_head_kv_each_rank[: rank + 1])
-
-            if n_head_kv == n_head:
-                x = rearrange(state_dict[key], "(three d) ... -> three d ...", three=3)
-                state_dict[key] = rearrange(
-                    x[:, beg_n_head * head_dim : end_n_head * head_dim],
-                    "three d ... -> (three d) ...",
-                )
-            else:
-                x = rearrange(
-                    state_dict[key],
-                    "(nheadqkv headdim) ... -> nheadqkv headdim ...",
-                    nheadqkv=n_head + 2 * n_head_kv,
-                )
-                state_dict[key] = rearrange(
-                    torch.cat(
-                        [
-                            x[beg_n_head:end_n_head],
-                            x[n_head + beg_n_head_kv : n_head + end_n_head_kv],
-                            x[
-                                n_head
-                                + n_head_kv
-                                + beg_n_head_kv : n_head
-                                + n_head_kv
-                                + end_n_head_kv
-                            ],
-                        ],
-                        dim=0,
-                    ),
-                    "nheadqkv headdim ... -> (nheadqkv headdim) ...",
-                )
-
-    shard_first_dim(state_dict, "transformer.embeddings.word_embeddings.weight")
-    if "lm_head.weight" in state_dict:
-        shard_first_dim(state_dict, "lm_head.weight")
-    if "transformer.embeddings.position_embeddings.weight" in state_dict:
-        shard_last_dim(state_dict, "transformer.embeddings.position_embeddings.weight")
-    for i in range(config.num_hidden_layers):
-        shard_qkv_headdim(state_dict, f"transformer.layers.{i}.mixer.Wqkv.weight")
-        shard_qkv_headdim(state_dict, f"transformer.layers.{i}.mixer.Wqkv.bias")
-        shard_last_dim(
-            state_dict, f"transformer.layers.{i}.mixer.out_proj.weight", multiple_of=head_dim
-        )
-        if rank != 0:
-            state_dict.pop(f"transformer.layers.{i}.mixer.out_proj.bias", None)
-        if config.activation_function in ["glu", "swiglu", "geglu"]:
-            shard_gatedmlp_fc1_dim(state_dict, f"transformer.layers.{i}.mlp.fc1.weight")
-            shard_gatedmlp_fc1_dim(state_dict, f"transformer.layers.{i}.mlp.fc1.bias")
-        else:
-            shard_first_dim(state_dict, f"transformer.layers.{i}.mlp.fc1.weight")
-            shard_first_dim(state_dict, f"transformer.layers.{i}.mlp.fc1.bias")
-        shard_last_dim(state_dict, f"transformer.layers.{i}.mlp.fc2.weight")
-        if rank != 0:
-            state_dict.pop(f"transformer.layers.{i}.mlp.fc2.bias", None)
-    return state_dict
-
-
-def combine_state_dicts_tp(state_dicts: List[Dict[str, torch.Tensor]], config: GPT2Config):
-    """Convert the list of sharded state_dict of a GPT model with tensor parallel to
-    the state_dict of a standard GPT model.
-
-    This function is meant to be the "reverse" of shard_state_dict_tp.
-
-    Precondition:
-        - state_dicts should be ordered in the same way as the shards were created.
-    """
-    world_size = len(state_dicts)
-    keys = state_dicts[0].keys()
-    pad_vocab_size_multiple = getattr(config, "pad_vocab_size_multiple", 1)
-    vocab_size = math.ceil(config.vocab_size / pad_vocab_size_multiple) * pad_vocab_size_multiple
-    assert vocab_size % world_size == 0
-    assert config.hidden_size % world_size == 0
-    inner_dim = config.n_inner if config.n_inner is not None else 4 * config.hidden_size
-    assert inner_dim % world_size == 0
-    assert config.hidden_size % config.n_head == 0
-    headdim = config.hidden_size // config.n_head
-
-    # Sometimes the word embeddings are sharded on the 0th dim, sometimes on the 1st dim.
-    # vocab_size // world_size coordinates are nonzero.
-    def combine_word_embeddings(state_dicts, state_dict, key):
-        dim = 0 if state_dicts[0][key].shape[0] == vocab_size // world_size else 1
-        state_dict[key] = torch.cat([s[key] for s in state_dicts], dim=dim)
-
-    def combine_dim(state_dicts, state_dict, key, dim=-1):
-        if key in state_dict:
-            state_dict[key] = torch.cat([s[key] for s in state_dicts], dim=dim)
-
-    def combine_qkv_headdim(state_dicts, state_dict, key):
-        n_head = config.n_head
-        n_head_kv = getattr(config, "n_head_kv", n_head)
-        if key in state_dict:
-            if n_head_kv == n_head:
-                xs = [
-                    rearrange(s[key], "(three d) ... -> three d ...", three=3) for s in state_dicts
-                ]
-                state_dict[key] = rearrange(torch.cat(xs, dim=1), "three d ... -> (three d) ...")
-            else:
-                n_head_each_rank = [
-                    get_dim_for_local_rank(n_head, world_size, local_rank)
-                    for local_rank in range(world_size)
-                ]
-                n_head_kv_each_rank = [
-                    get_dim_for_local_rank(n_head_kv, world_size, local_rank)
-                    for local_rank in range(world_size)
-                ]
-                xs = [
-                    rearrange(
-                        s[key],
-                        "(nheadqkv headdim) ... -> nheadqkv headdim ...",
-                        nheadqkv=rank_n_head + 2 * rank_n_head_kv,
-                        headdim=headdim,
-                    )
-                    for s, rank_n_head, rank_n_head_kv in zip(
-                        state_dicts, n_head_each_rank, n_head_kv_each_rank
-                    )
-                ]
-                wq = torch.cat([x[: n_head_each_rank[rank]] for rank, x in enumerate(xs)], dim=0)
-                wk = torch.cat(
-                    [
-                        x[
-                            n_head_each_rank[rank] : n_head_each_rank[rank]
-                            + n_head_kv_each_rank[rank]
-                        ]
-                        for rank, x in enumerate(xs)
-                    ],
-                    dim=0,
-                )
-                wv = torch.cat(
-                    [
-                        x[n_head_each_rank[rank] + n_head_kv_each_rank[rank] :]
-                        for rank, x in enumerate(xs)
-                    ],
-                    dim=0,
-                )
-                wqkv = torch.cat(
-                    [wq, wk, wv],
-                    dim=0,
-                )
-                state_dict[key] = rearrange(
-                    wqkv,
-                    "nheadqkv headdim ... -> (nheadqkv headdim) ...",
-                )
-
-    def combine_gated_mlp(state_dicts, state_dict, key):
-        if key in state_dict:
-            xs = [rearrange(s[key], "(two d) ... -> two d ...", two=2) for s in state_dicts]
-            state_dict[key] = rearrange(torch.cat(xs, dim=1), "two d ... -> (two d) ...")
-
-    state_dict = state_dicts[0].copy()  # don't modify state_dict[0] inplace
-    combine_word_embeddings(
-        state_dicts, state_dict, "transformer.embeddings.word_embeddings.weight"
-    )
-    if "lm_head.weight" in state_dict:
-        combine_word_embeddings(state_dicts, state_dict, "lm_head.weight")
-    if "transformer.embeddings.position_embeddings.weight" in state_dict:
-        combine_dim(
-            state_dicts, state_dict, "transformer.embeddings.position_embeddings.weight", -1
-        )
-    mlp_combine_fn = (
-        combine_gated_mlp
-        if config.activation_function in ["glu", "swiglu", "geglu"]
-        else partial(combine_dim, dim=0)
-    )
-    for i in range(config.num_hidden_layers):
-        combine_qkv_headdim(state_dicts, state_dict, f"transformer.layers.{i}.mixer.Wqkv.weight")
-        combine_qkv_headdim(state_dicts, state_dict, f"transformer.layers.{i}.mixer.Wqkv.bias")
-        combine_dim(state_dicts, state_dict, f"transformer.layers.{i}.mixer.out_proj.weight", -1)
-        mlp_combine_fn(state_dicts, state_dict, f"transformer.layers.{i}.mlp.fc1.weight")
-        combine_dim(state_dicts, state_dict, f"transformer.layers.{i}.mlp.fc1.bias", 0)
-        combine_dim(state_dicts, state_dict, f"transformer.layers.{i}.mlp.fc2.weight", -1)
-    return state_dict
-
-
-def remap_state_dict_hf_gpt2(state_dict, config):
-    # Word embedding and position embedding
-    def key_mapping_pos_emb(key):
-        return re.sub(r"^wpe.", "transformer.embeddings.position_embeddings.", key)
-
-    state_dict = OrderedDict((key_mapping_pos_emb(k), v) for k, v in state_dict.items())
-    word_embeddings = state_dict.pop("wte.weight")
-    # It's possible that vocab_size is padded to be a multiple of 8, for example.
-    pad_vocab_size_multiple = getattr(config, "pad_vocab_size_multiple", 1)
-    vocab_size = math.ceil(config.vocab_size / pad_vocab_size_multiple) * pad_vocab_size_multiple
-    state_dict["transformer.embeddings.word_embeddings.weight"] = F.pad(
-        word_embeddings, (0, 0, 0, vocab_size - word_embeddings.shape[0])
-    )
-    state_dict["lm_head.weight"] = state_dict["transformer.embeddings.word_embeddings.weight"]
-
-    # LayerNorm
-    def key_mapping_ln(key):
-        key = re.sub(r"^ln_f.(weight|bias)", r"transformer.ln_f.\1", key)
-        key = re.sub(r"^h.(\d+).ln_(1|2).(weight|bias)", r"transformer.layers.\1.norm\2.\3", key)
-        return key
-
-    state_dict = OrderedDict((key_mapping_ln(k), v) for k, v in state_dict.items())
-
-    # MLP
-    for d in range(config.num_hidden_layers):
-        W1 = state_dict.pop(f"h.{d}.mlp.c_fc.weight")
-        state_dict[f"transformer.layers.{d}.mlp.fc1.weight"] = W1.t()
-        W2 = state_dict.pop(f"h.{d}.mlp.c_proj.weight")
-        state_dict[f"transformer.layers.{d}.mlp.fc2.weight"] = W2.t()
-
-    def key_mapping_mlp(key):
-        key = re.sub(r"^h.(\d+).mlp.c_fc.bias", r"transformer.layers.\1.mlp.fc1.bias", key)
-        key = re.sub(r"^h.(\d+).mlp.c_proj.bias", r"transformer.layers.\1.mlp.fc2.bias", key)
-        return key
-
-    state_dict = OrderedDict((key_mapping_mlp(k), v) for k, v in state_dict.items())
-
-    # Attention
-    for d in range(config.num_hidden_layers):
-        state_dict.pop(f"h.{d}.attn.bias")  # We don't store this bias
-        Wqkv = state_dict.pop(f"h.{d}.attn.c_attn.weight")
-        state_dict[f"transformer.layers.{d}.mixer.Wqkv.weight"] = Wqkv.t()
-        Wout = state_dict.pop(f"h.{d}.attn.c_proj.weight")
-        state_dict[f"transformer.layers.{d}.mixer.out_proj.weight"] = Wout.t()
-
-    def key_mapping_attn(key):
-        key = re.sub(r"^h.(\d+).attn.c_attn.bias", r"transformer.layers.\1.mixer.Wqkv.bias", key)
-        key = re.sub(
-            r"^h.(\d+).attn.c_proj.bias", r"transformer.layers.\1.mixer.out_proj.bias", key
-        )
-        return key
-
-    state_dict = OrderedDict((key_mapping_attn(k), v) for k, v in state_dict.items())
-
-    return state_dict
-
-
-def remap_state_dict_megatron(state_dict, config):
-    def key_mapping_transformer(key):
-        key = re.sub(r"^language_model.encoder.", "transformer.", key)
-        key = re.sub(r"^language_model.", "transformer.", key)
-        return key
-
-    state_dict = OrderedDict((key_mapping_transformer(k), v) for k, v in state_dict.items())
-
-    # Word embedding and position embedding
-    def key_mapping_pos_emb(key):
-        return re.sub(r"^wpe.", "transformer.embeddings.position_embeddings.", key)
-
-    state_dict = OrderedDict((key_mapping_pos_emb(k), v) for k, v in state_dict.items())
-    word_embeddings = state_dict.pop("transformer.embedding.word_embeddings.weight")
-    # It's possible that vocab_size is padded to be a multiple of 8, for example.
-    pad_vocab_size_multiple = getattr(config, "pad_vocab_size_multiple", 1)
-    vocab_size = (
-        math.ceil(word_embeddings.shape[0] / pad_vocab_size_multiple) * pad_vocab_size_multiple
-    )
-    state_dict["transformer.embeddings.word_embeddings.weight"] = F.pad(
-        word_embeddings, (0, 0, 0, vocab_size - word_embeddings.shape[0])
-    )
-    state_dict["lm_head.weight"] = state_dict["transformer.embeddings.word_embeddings.weight"]
-
-    # LayerNorm
-    def key_mapping_ln(key):
-        key = re.sub(r"^transformer.final_layernorm.(weight|bias)", r"transformer.ln_f.\1", key)
-        key = re.sub(
-            r"^transformer.layers.(\d+).input_layernorm.(weight|bias)",
-            r"transformer.layers.\1.norm1.\2",
-            key,
-        )
-        key = re.sub(
-            r"^transformer.layers.(\d+).post_attention_layernorm.(weight|bias)",
-            r"transformer.layers.\1.norm2.\2",
-            key,
-        )
-        return key
-
-    state_dict = OrderedDict((key_mapping_ln(k), v) for k, v in state_dict.items())
-
-    # MLP
-    def key_mapping_mlp(key):
-        key = re.sub(
-            r"^transformer.layers.(\d+).mlp.dense_h_to_4h.(weight|bias)",
-            r"transformer.layers.\1.mlp.fc1.\2",
-            key,
-        )
-        key = re.sub(
-            r"^transformer.layers.(\d+).mlp.dense_4h_to_h.(weight|bias)",
-            r"transformer.layers.\1.mlp.fc2.\2",
-            key,
-        )
-        return key
-
-    state_dict = OrderedDict((key_mapping_mlp(k), v) for k, v in state_dict.items())
-
-    # Attention
-    def key_mapping_attn(key):
-        key = re.sub(
-            r"^transformer.layers.(\d+).self_attention.rotary_emb.inv_freq",
-            r"transformer.layers.\1.mixer.rotary_emb.inv_freq",
-            key,
-        )
-        key = re.sub(
-            r"^transformer.layers.(\d+).self_attention.query_key_value.(weight|bias)",
-            r"transformer.layers.\1.mixer.Wqkv.\2",
-            key,
-        )
-        key = re.sub(
-            r"^transformer.layers.(\d+).self_attention.dense.(weight|bias)",
-            r"transformer.layers.\1.mixer.out_proj.\2",
-            key,
-        )
-        return key
-
-    state_dict = OrderedDict((key_mapping_attn(k), v) for k, v in state_dict.items())
-    # Megatron stores Wqkv as ((nheads 3 headdim), hidden_dim)
-    # while we store Wqkv as ((3 nheads headdim), hidden_dim)
-    headdim = config.hidden_size // config.num_attention_heads
-    for d in range(config.num_hidden_layers):
-        Wqkv = state_dict.pop(f"transformer.layers.{d}.mixer.Wqkv.weight")
-        state_dict[f"transformer.layers.{d}.mixer.Wqkv.weight"] = rearrange(
-            Wqkv,
-            "(nheads three headdim) ... -> (three nheads headdim) ...",
-            three=3,
-            headdim=headdim,
-        )
-        bqkv = state_dict.pop(f"transformer.layers.{d}.mixer.Wqkv.bias")
-        state_dict[f"transformer.layers.{d}.mixer.Wqkv.bias"] = rearrange(
-            bqkv, "(nheads three headdim) -> (three nheads headdim)", three=3, headdim=headdim
-        )
-
-    return state_dict

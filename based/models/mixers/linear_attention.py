@@ -9,8 +9,7 @@ from einops import rearrange
 
 from based.generation import InferenceParams
 
-import sys
-sys.path.append("../../../")
+########### VARIOUS KERNEL OPTIONS ###########
 
 try:
     from train.csrc.causal_dot_prod import causal_dot_product  # linear attention cuda kernel
@@ -25,6 +24,15 @@ try:
     print(f"Successfully imported the FLA triton kernels! ")
 except:
     print(f"Could not import the FLA triton kernels... ")
+
+try:
+    import thunderkittens as tk
+    from fla.modules import RMSNorm
+    print(f"Successfully imported tk")
+except:
+    print(f"Please install the based kernel within ThunderKittens")
+
+########### VARIOUS KERNEL OPTIONS ###########
 
         
 class FeatureMap(nn.Module):
@@ -70,7 +78,7 @@ class LinearAttention(nn.Module):
     def __init__(
         self,
         d_model: int,
-        feature_map: FeatureMap, 
+        feature_map: FeatureMap = TaylorExp, 
         l_max: int = 2048,
         feature_dim: int = 16,
         head_dim: int = None,
@@ -100,6 +108,9 @@ class LinearAttention(nn.Module):
         self.proj_v = nn.Linear(self.d_model, self.num_heads * self.head_dim, bias=False)
         self.out_proj = nn.Linear(self.num_heads * self.head_dim, self.d_model, bias=False)
 
+        if self.parallel_implementation == "tk":
+            self.g_norm = RMSNorm(self.head_dim, eps=1e-5)
+
         
     def forward(self, 
         hidden_states: torch.Tensor,
@@ -117,19 +128,19 @@ class LinearAttention(nn.Module):
         k = k.view(b, l, self.num_heads, self.feature_dim).transpose(1, 2)
         v = v.view(b, l, self.num_heads, self.head_dim).transpose(1, 2)
 
+        self.is_inference = inference_params is not None
         if inference_params is None:
             return self.parallel_forward(hidden_states, q, k, v)
         else:
             # check if we are doing prefill or generation
-            if inference_params.seqlen_offset > 0: # recurrent
+            if inference_params.seqlen_offset > 0: 
+                # recurrent
                 kv_state, k_state = self._get_inference_cache(inference_params)
                 q, k = self.feature_map(q), self.feature_map(k)
                 return self.recurrent_forward(hidden_states, kv_state, k_state, q, k, v)
-            else:  # prefill
-                y = self.parallel_forward(hidden_states, q, k, v)
-                q, k = self.feature_map(q), self.feature_map(k)
-                kv_state = torch.einsum("bhnd,bhnf->bhfd", k, v)[:, :, None]
-                k_state = k.sum(dim=2)[:, :, None, None]
+            else:  
+                # prefill
+                y, kv_state, k_state = self.parallel_forward(hidden_states, q, k, v)
                 if self.layer_idx in inference_params.key_value_memory_dict:
                     # # update the state in-place when graph caching is enabled
                     inference_params.key_value_memory_dict[self.layer_idx][0].copy_(kv_state)
@@ -139,7 +150,24 @@ class LinearAttention(nn.Module):
                 return y
 
     def parallel_forward(self, x: torch.Tensor, q: torch.Tensor, k: torch.Tensor, v: torch.Tensor):
-        if self.parallel_implementation == "quadratic":
+        
+        if self.parallel_implementation == "tk":
+
+            # WARNING: this mode is currently only for BENCHMARKING and seqlen needs to be a multiple of 64
+            # pad to use other seqlens, as in https://github.com/HazyResearch/ThunderKittens/tree/main/demos/based_demo
+            q = q.contiguous()
+            k = k.contiguous()
+            v = v.contiguous()
+            y, kv_state = tk.based( q, k, v )  
+            if self.is_inference:
+                kv_state = kv_state[:, :, None].transpose(3, 4)
+                k_state = None
+            # output norm and gating 
+            y = self.g_norm(y)
+            y = rearrange(y, 'b h l d -> b l (h d)')
+        
+        elif self.parallel_implementation == "quadratic":
+
             q, k = self.feature_map(q), self.feature_map(k)
             A_qk = torch.einsum("bhnd,bhmd->bhnm", q, k) 
             try:
@@ -155,6 +183,7 @@ class LinearAttention(nn.Module):
             y = rearrange(y, 'b h l d -> b l (h d)')
 
         elif self.parallel_implementation == "linear": 
+
             q, k = self.feature_map(q), self.feature_map(k)
             v = causal_dot_product(q.contiguous().to(dtype=torch.float32), k.contiguous().to(dtype=torch.float32),v.contiguous().to(dtype=torch.float32),)
             z = 1 / (
@@ -168,6 +197,7 @@ class LinearAttention(nn.Module):
             y = rearrange(y, 'b h l d -> b l (h d)')
 
         elif self.parallel_implementation == "fla_parallel":
+
             """ 
             Computes both the feature map and causal dot products.
             Booleans are for the denominator and the normalization 
@@ -176,6 +206,7 @@ class LinearAttention(nn.Module):
             y = rearrange(y, 'b h l d -> b l (h d)')
 
         elif self.parallel_implementation == "fla_chunk":
+
             """ 
             Computes both the feature map and causal dot products.
             Booleans are for the denominator and the normalization 
@@ -186,7 +217,14 @@ class LinearAttention(nn.Module):
         else: 
             raise ValueError(f"Parallel implementation {self.parallel_implementation} not supported")
 
-        return self.out_proj(y.to(x.dtype))
+        if self.is_inference and self.parallel_implementation != "tk":
+            kv_state = torch.einsum("bhnd,bhnf->bhfd", k, v)[:, :, None]
+            k_state = k.sum(dim=2)[:, :, None, None]
+
+        if self.is_inference:
+            return self.out_proj(y.to(x.dtype)), kv_state, k_state
+        else:
+            return self.out_proj(y.to(x.dtype))
 
     
     def recurrent_forward(self, hidden_states: torch.Tensor, kv_state: torch.Tensor, k_state: torch.Tensor, q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, decay: torch.Tensor=None):

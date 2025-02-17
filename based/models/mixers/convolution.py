@@ -7,6 +7,7 @@ from typing import List
 from flash_attn.utils.generation import InferenceParams
 try:
     from causal_conv1d import causal_conv1d_fn, causal_conv1d_update
+    print("Successfully imported causal_conv1d_fn and causal_conv1d_update")
 except:
     causal_conv1d_fn = None
     causal_conv1d_update = None
