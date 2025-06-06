@@ -108,7 +108,7 @@ model = MambaLMHeadModel.from_pretrained_hf("hazyresearch/mamba-360m").to("cuda"
 
 ## Train
 
-Follow the README.md instructions at ```based/train/``` to train your own Based models!
+Follow the README.md instructions at [based/train/](https://github.com/HazyResearch/based/tree/main/train) to train your own Based models!
 
 ## Evaluate
 In our paper, we evaluate pretrained language models on a standard suite of benchmarks from the LM Evaluation Harness, as well as a suite of three *recall-intensive* tasks:
